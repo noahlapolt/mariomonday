@@ -1,1 +1,71 @@
-# mariomonday
+## Architecture
+- localhost
+- MongoDB
+- Java
+	- Spring boot
+- Svelte
+- Sveltekit
+- Typescript
+- Domain $
+- DNS
+- Docker
+	- CentOS
+	- Pull Updates From GitHub
+- GitHub
+## DB schema
+- Player
+	- ID
+	- Name
+		- Unique
+- Bracket
+	- ID
+	- Date Time
+	- Rounds
+		- Added at end of bracket
+	- Winners
+	- Game Type
+	- Players involved
+- Set
+	- ID
+	- Bracket ID
+	- Game Type
+	- Winners
+	- Players
+	- Number of Games
+	- Round
+- Game
+	- ID
+	- Set ID
+	- Game Type
+	- Winners
+	- Players
+	- Round
+### Future
+- Characters
+	- ID
+	- Name
+- User
+	- ID
+	- Image
+	- BIO
+## API
+- Get Players
+- Create Players
+- Update Player
+- Create Bracket
+	- Creates all sets
+- Add Player to Bracket (late entry)
+- Update Set
+- Get Active Bracket
+- Get Stats
+- Get Universal Stats
+- Get Leaderboard
+## Domain
+- Internal (the avenue)?
+- mariomonday.net?
+## UI
+- Add a checkbox for paid or not
+- History Page
+- Venmo QR code is the better link
+	- https://venmo.com/username?txn=Text&amount=amount
+- 
