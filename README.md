@@ -8,7 +8,7 @@
 - Typescript
 - Domain $
 - DNS
-- Docker
+- Podman
 	- CentOS
 	- Pull Updates From GitHub
 - GitHub
