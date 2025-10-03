@@ -19,11 +19,11 @@
     let desktop = $state(true); //TODO calculate this value based on the width of the screen.
     let nextGame = $state(games.smash); //TODO figure out how to calculate this value.
     let stats = [
+        { name: "Reed", win: 5, loss: 100 },
+        { name: "Zach", win: 5, loss: 100 },
+        { name: "Jack", win: 5, loss: 100 },
         { name: "Noah", win: 5, loss: 100 },
-        { name: "Noah", win: 5, loss: 100 },
-        { name: "Noah", win: 5, loss: 100 },
-        { name: "Noah", win: 5, loss: 100 },
-    ]; //api.getStats();
+    ]; //api.getStats(); I assume this will be sorted by win/loss ratio? Needs to be a state.
 </script>
 
 <div id="landing">
@@ -32,8 +32,16 @@
             <div class="background" style={game.style}>
                 <div class="startScreen">
                     <img src={game.img} alt={game.alt} />
-                    <div>
-                        <!--Add the leaderboard stack-->
+                    <div class="leaderBoard">
+                        {#each [1, 0, 2] as top}
+                            <div
+                                class="leader"
+                                style={`height: ${["75%", "50%", "25%"][top]};`}
+                            >
+                                {top + 1}
+                                <p class="user">{stats[top].name}</p>
+                            </div>
+                        {/each}
                     </div>
                     <button>Start Tournament</button>
                 </div>
@@ -84,5 +92,30 @@
         margin: 0.5rem 0;
         width: 100%;
         background-color: #999999;
+    }
+
+    .leaderBoard {
+        display: flex;
+        justify-content: center;
+        align-items: end;
+        height: 50%;
+    }
+
+    .leader {
+        background-color: #999999;
+        position: relative;
+        width: calc(33% - 2rem);
+        text-align: center;
+        font-size: xx-large;
+        padding: 1rem;
+    }
+
+    .user {
+        position: absolute;
+        top: -4rem;
+        left: 0rem;
+        width: 100%;
+        text-align: center;
+        color: #999999;
     }
 </style>
