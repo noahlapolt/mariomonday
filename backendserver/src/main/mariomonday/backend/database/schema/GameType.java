@@ -1,4 +1,4 @@
-package mariomonday.backend.schema;
+package mariomonday.backend.database.schema;
 
 public enum GameType {
   MARIO_KART,
