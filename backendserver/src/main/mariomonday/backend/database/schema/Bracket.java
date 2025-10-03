@@ -1,4 +1,4 @@
-package mariomonday.backend.schema;
+package mariomonday.backend.database.schema;
 
 import java.time.Instant;
 import java.util.Set;
