@@ -1,4 +1,4 @@
-package mariomonday.backend.schema;
+package mariomonday.backend.database.schema;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;

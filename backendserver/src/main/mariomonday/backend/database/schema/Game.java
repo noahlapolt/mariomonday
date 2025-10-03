@@ -1,4 +1,4 @@
-package mariomonday.backend.schema;
+package mariomonday.backend.database.schema;
 
 import org.springframework.data.annotation.Id;
 import lombok.Data;
@@ -18,9 +18,9 @@ public class Game {
     private String id;
 
     /**
-     * The ID of the bracket this game belongs to
+     * The ID of the set this game belongs to
      */
-    private String bracket;
+    private String setId;
 
     /**
      * The player IDs of the winners of the game
@@ -31,9 +31,4 @@ public class Game {
      * The player IDs of the players in the game
      */
     private Set<String> players;
-
-    /**
-     * The round this game took place in
-     */
-    private int round;
 }
