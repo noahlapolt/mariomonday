@@ -2,7 +2,6 @@ package mariomonday.backend.database.tables;
 
 import java.util.List;
 import mariomonday.backend.database.schema.Game;
-import mariomonday.backend.database.schema.GameSet;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 /**
