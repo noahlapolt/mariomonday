@@ -4,11 +4,13 @@ import java.time.Instant;
 import java.util.Set;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * A tournament, containing multiple games
  */
 @Data
+@Document
 public class Bracket {
 
     /**

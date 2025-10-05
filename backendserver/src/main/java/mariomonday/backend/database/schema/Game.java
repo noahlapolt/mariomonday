@@ -4,11 +4,13 @@ import org.springframework.data.annotation.Id;
 import lombok.Data;
 
 import java.util.Set;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * A game
  */
 @Data
+@Document
 public class Game {
 
     /**
