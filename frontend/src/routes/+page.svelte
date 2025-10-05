@@ -9,17 +9,19 @@
 
     const games = {
         smash: {
+            name: "smash",
             style: "background-color: #0c0c0c",
             img: smashImg,
             alt: "of the smash logo.",
         },
         kart: {
+            name: "kart",
             style: "background-color: #47ffe3",
             img: kartImg,
             alt: "of the kart logo.",
         },
     };
-    let desktop = $state(true); //TODO calculate this value based on the width of the screen.
+    let desktop = $state(false); //TODO calculate this value based on the width of the screen.
     let nextGame = $state(games.smash); //TODO figure out how to calculate this value.
     let stats = [
         { name: "Reed", win: 4, loss: 100 },
@@ -31,7 +33,7 @@
 
 <div id="landing">
     {#each [games.smash, games.kart] as game}
-        {#if nextGame === game || desktop}
+        {#if nextGame.name === game.name || desktop}
             <div class="background" style={game.style}>
                 <div class="startScreen">
                     <img src={game.img} alt={game.alt} />
@@ -46,7 +48,7 @@
                             </div>
                         {/each}
                     </div>
-                    <a href="tournament">Start Tournament</a>
+                    <a href={`setup?mode=${game.name}`}>New Tournament</a>
                 </div>
                 <div class="stats">
                     {#each stats as stat}
