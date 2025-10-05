@@ -49,17 +49,20 @@
 	- Image
 	- BIO
 ## API
-- Get Players
-- Create Players
-- Update Player
-- Create Bracket
-	- Creates all sets
-- Add Player to Bracket (late entry)
-- Update Set
-- Get Active Bracket
-- Get Stats
-- Get Universal Stats
-- Get Leaderboard
+- Admin Only
+  - Create Players
+  - Update Player
+  - Create Bracket
+      - Creates all sets
+  - Add Player to Bracket (late entry)
+  - Update Set
+- Everyone
+  - Log In (Jake)
+  - Get Players
+  - Get Active Bracket
+  - Get Stats
+  - Get Universal Stats
+  - Get Leaderboard
 ## Domain
 - Internal (the avenue)?
 - mariomonday.net?

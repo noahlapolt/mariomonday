@@ -3,11 +3,13 @@ package mariomonday.backend.database.schema;
 import java.util.Set;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * A set of games within a bracket, where the winner moves on
  */
 @Data
+@Document
 public class GameSet {
 
     @Id
