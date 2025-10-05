@@ -4,25 +4,28 @@
 -->
 
 <script lang="ts">
+    import smashImg from "$lib/assets/Smash.png";
+    import kartImg from "$lib/assets/kart_8.png";
+
     const games = {
         smash: {
             style: "background-color: #0c0c0c",
-            img: "",
+            img: smashImg,
             alt: "of the smash logo.",
         },
         kart: {
             style: "background-color: #47ffe3",
-            img: "",
+            img: kartImg,
             alt: "of the kart logo.",
         },
     };
     let desktop = $state(true); //TODO calculate this value based on the width of the screen.
     let nextGame = $state(games.smash); //TODO figure out how to calculate this value.
     let stats = [
-        { name: "Reed", win: 5, loss: 100 },
-        { name: "Zach", win: 5, loss: 100 },
-        { name: "Jack", win: 5, loss: 100 },
-        { name: "Noah", win: 5, loss: 100 },
+        { name: "Reed", win: 4, loss: 100 },
+        { name: "Zach", win: 3, loss: 100 },
+        { name: "Jack", win: 2, loss: 100 },
+        { name: "Noah", win: 1, loss: 100 },
     ]; //api.getStats(); I assume this will be sorted by win/loss ratio? Needs to be a state.
 </script>
 
@@ -43,15 +46,18 @@
                             </div>
                         {/each}
                     </div>
-                    <button>Start Tournament</button>
+                    <a href="tournament">Start Tournament</a>
                 </div>
                 <div class="stats">
                     {#each stats as stat}
                         <div class="stat">
-                            <!--TODO figure out if a plural is needed here-->
                             <span>Player: {stat.name}</span>
-                            <span>Wins: {stat.win}</span>
-                            <span>Losses: {stat.loss}</span>
+                            <span>
+                                {stat.win > 1 ? "Wins" : "Win"}: {stat.win}
+                            </span>
+                            <span>
+                                {stat.loss > 1 ? "Losses" : "Loss"}: {stat.loss}
+                            </span>
                             <span>Ratio: {stat.win / stat.loss}</span>
                         </div>
                     {/each}
@@ -69,15 +75,21 @@
     }
 
     .background {
-        padding: 2rem;
+        padding: 0rem 2rem;
         flex-grow: 1;
     }
 
     .startScreen {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-around;
+        display: grid;
+        grid-template-rows: 20vh 60vh 1.5rem;
+        grid-template-columns: 1fr;
         height: 100vh;
+        gap: 1rem;
+    }
+
+    .startScreen > img {
+        height: 100%;
+        justify-self: center;
     }
 
     .stats {
@@ -98,7 +110,7 @@
         display: flex;
         justify-content: center;
         align-items: end;
-        height: 50%;
+        gap: 1rem;
     }
 
     .leader {
