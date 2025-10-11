@@ -4,6 +4,8 @@
     "prettier-plugin-java": "2.7.5"
   },
   "dependencies": {
+    "mongod": "^2.0.0",
+    "mongodb": "^6.20.0",
     "mvn": "^3.5.0"
   }
 }

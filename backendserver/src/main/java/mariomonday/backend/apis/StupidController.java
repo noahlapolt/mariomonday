@@ -8,17 +8,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class StupidController {
 
-    @GetMapping("/stupid")
-    public Player fuckYouGuy() {
-        var player = new Player();
-        player.setName("Fuck you guy!");
-        return player;
-    }
+  @GetMapping("/stupid")
+  public Player fuckYouGuy() {
+    var player = Player.builder().id("Oh").name("Yeah yeah").build();
 
-    @PostMapping("/stupid")
-    public Player coolGuy() {
-        var player = new Player();
-        player.setName("Reed");
-        return player;
-    }
+    return player;
+  }
+
+  @PostMapping("/stupid")
+  public Player coolGuy() {
+    var player = Player.builder().id("Yeah yeah").name("No no").build();
+
+    return player;
+  }
 }
