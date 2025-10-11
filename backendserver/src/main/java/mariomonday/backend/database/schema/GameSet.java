@@ -39,6 +39,11 @@ public class GameSet {
    */
   private GameType gameType;
 
+  @DocumentReference(lazy = true)
+  private final Set<GameSet> previousGameSets;
+
+  private List<Game> games;
+
 
   public boolean hasEmptySlots() {
     return getEmptySlotsCount() > 0;
@@ -52,13 +57,16 @@ public class GameSet {
     return gameType.getPlayerSetsToMoveOn() >= previousGameSets.size();
   }
 
+  public int getNumberOfPlayerSetsAvailableToPlay() {
+    return previousGameSets.stream().filter(gameSet -> !gameSet.isFinished()).mapToInt(e -> 1).sum() * gameType.getPlayerSetsToMoveOn() + playerSets.size();
+  }
+
   public int getPlayerSetCount() {
     return playerSets.size();
   }
 
-  @DocumentReference(lazy = true)
-  private Set<GameSet> previousGameSets;
-
-  private List<Game> games;
+  public boolean isFinished() {
+    return !winners.isEmpty();
+  }
 
 }
