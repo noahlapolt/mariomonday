@@ -24,23 +24,20 @@ class GameSetTests {
   private static Stream<Arguments> testData() {
     return Stream.of(
       Arguments.of(
-        GameSetTestData.builder()
-          .descriptor("Mario kart with full previous games")
-          .gameType(GameType.MARIO_KART_8)
-          .previousGameWinners(List.of(2, 2))
-          .build()
+        "Mario kart with full previous games",
+        GameSetTestData.builder().gameType(GameType.MARIO_KART_8).previousGameWinners(List.of(2, 2)).build()
       ),
       Arguments.of(
+        "Mario kart with one missing winner from previous game",
         GameSetTestData.builder()
-          .descriptor("Mario kart with one missing winner from previous game")
           .gameType(GameType.MARIO_KART_8)
           .previousGameWinners(List.of(2, 1))
           .numEmptySlots(1)
           .build()
       ),
       Arguments.of(
+        "Mario kart with missing winners from previous games",
         GameSetTestData.builder()
-          .descriptor("Mario kart with missing winners from previous games")
           .gameType(GameType.MARIO_KART_8)
           .previousGameWinners(List.of(1, 1))
           .isByeRound(true)
@@ -48,15 +45,12 @@ class GameSetTests {
           .build()
       ),
       Arguments.of(
-        GameSetTestData.builder()
-          .descriptor("Smash bros with full previous games")
-          .gameType(GameType.SMASH_ULTIMATE_SINGLES)
-          .previousGameWinners(List.of(1, 1))
-          .build()
+        "Smash bros with full previous games",
+        GameSetTestData.builder().gameType(GameType.SMASH_ULTIMATE_SINGLES).previousGameWinners(List.of(1, 1)).build()
       ),
       Arguments.of(
+        "Smash bros with one missing winner from previous game",
         GameSetTestData.builder()
-          .descriptor("Smash bros with no players")
           .gameType(GameType.SMASH_ULTIMATE_SINGLES)
           .previousGameWinners(List.of(0, 0))
           .isByeRound(true)
@@ -65,8 +59,8 @@ class GameSetTests {
           .build()
       ),
       Arguments.of(
+        "Smash bros with too many players",
         GameSetTestData.builder()
-          .descriptor("Smash bros with too many players")
           .gameType(GameType.SMASH_ULTIMATE_SINGLES)
           .previousGameWinners(List.of(1, 1))
           .playersAddedToGame(1)
@@ -74,8 +68,8 @@ class GameSetTests {
           .build()
       ),
       Arguments.of(
+        "Mario kart with too many players",
         GameSetTestData.builder()
-          .descriptor("Mario kart with too many players")
           .gameType(GameType.MARIO_KART_8)
           .previousGameWinners(List.of(4, 4))
           .playersAddedToGame(1)
@@ -83,15 +77,12 @@ class GameSetTests {
           .build()
       ),
       Arguments.of(
-        GameSetTestData.builder()
-          .descriptor("Mario kart with no previous games and full players added")
-          .gameType(GameType.MARIO_KART_8)
-          .playersAddedToGame(4)
-          .build()
+        "Mario kart with no previous games and full players added",
+        GameSetTestData.builder().gameType(GameType.MARIO_KART_8).playersAddedToGame(4).build()
       ),
       Arguments.of(
+        "Mario kart with no previous games not enough players added for a game",
         GameSetTestData.builder()
-          .descriptor("Mario kart with no previous games not enough players added for a game")
           .gameType(GameType.MARIO_KART_8)
           .playersAddedToGame(2)
           .numEmptySlots(2)
@@ -99,8 +90,8 @@ class GameSetTests {
           .build()
       ),
       Arguments.of(
+        "Mario Kart with no previous games and not enough players added for moving on",
         GameSetTestData.builder()
-          .descriptor("Mario Kart with no previous games and not enough players added for moving on")
           .gameType(GameType.MARIO_KART_8)
           .playersAddedToGame(1)
           .numPlayersMovingOn(1)
@@ -114,8 +105,6 @@ class GameSetTests {
   @Value
   @Builder
   private static class GameSetTestData {
-
-    String descriptor;
 
     GameType gameType;
 
@@ -141,43 +130,39 @@ class GameSetTests {
     }
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{index} {0}")
   @MethodSource("testData")
-  void isByeRound(GameSetTestData testData) {
+  void isByeRound(String descriptor, GameSetTestData testData) {
     GameSet testGame = createGameSetFromTestData(testData);
     assertThat(testGame.isByeRound())
-      .as(String.format("%s results in %s bye round", testData.getDescriptor(), testData.isByeRound() ? "a" : "no"))
+      .as(String.format("%s results in %s bye round", descriptor, testData.isByeRound() ? "a" : "no"))
       .isEqualTo(testData.isByeRound());
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{index} {0}")
   @MethodSource("testData")
-  void numEmptySlots(GameSetTestData testData) {
+  void numEmptySlots(String descriptor, GameSetTestData testData) {
     GameSet testGame = createGameSetFromTestData(testData);
     assertThat(testGame.getNumEmptySlots())
-      .as(String.format("%s results in %s empty slots", testData.getDescriptor(), testData.getNumEmptySlots()))
+      .as(String.format("%s results in %s empty slots", descriptor, testData.getNumEmptySlots()))
       .isEqualTo(testData.getNumEmptySlots());
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{index} {0}")
   @MethodSource("testData")
-  void isValidGameSet(GameSetTestData testData) {
+  void isValidGameSet(String descriptor, GameSetTestData testData) {
     GameSet testGame = createGameSetFromTestData(testData);
     assertThat(testGame.isValidGameSet())
-      .as(
-        String.format("%s results in %s game set", testData.getDescriptor(), testData.isValid() ? "valid" : "invalid")
-      )
+      .as(String.format("%s results in %s game set", descriptor, testData.isValid() ? "valid" : "invalid"))
       .isEqualTo(testData.isValid());
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{index} {0}")
   @MethodSource("testData")
-  void getNumPlayersMovingOn(GameSetTestData testData) {
+  void getNumPlayersMovingOn(String descriptor, GameSetTestData testData) {
     GameSet testGame = createGameSetFromTestData(testData);
     assertThat(testGame.getExpectedPlayersMovingOn())
-      .as(
-        String.format("%s results in %s players moving on", testData.getDescriptor(), testData.getNumPlayersMovingOn())
-      )
+      .as(String.format("%s results in %s players moving on", descriptor, testData.getNumPlayersMovingOn()))
       .isEqualTo(testData.getNumPlayersMovingOn());
   }
 
