@@ -9,6 +9,8 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.NonNull;
+import lombok.Singular;
 
 /**
  * A tournament, containing multiple games
@@ -27,6 +29,7 @@ public class Bracket {
   /**
    * The moment the bracket started
    */
+  @NonNull
   private final Instant date;
 
   /**
@@ -38,23 +41,26 @@ public class Bracket {
    * The winners
    */
   @DocumentReference(lazy = true)
+  @Singular
   private Set<Player> winners;
 
   /**
    * The type of game this bracket was for
    */
+  @NonNull
   private final GameType gameType;
 
   /**
    * The players who participated in this bracket
    */
   @DocumentReference(lazy = true)
-  private Set<Player> people;
-
+  @Singular
+  private Set<Player> players;
 
   /**
    * The sets in this bracket
    */
   @DocumentReference(lazy = true)
-  private Set<GameSet> gamesSets;
+  @Singular
+  private Set<GameSet> gameSets;
 }

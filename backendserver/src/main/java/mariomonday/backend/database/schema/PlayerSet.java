@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Singular;
 import lombok.Value;
 
 /**
@@ -17,6 +18,7 @@ import lombok.Value;
 @Value
 @Builder
 public class PlayerSet {
+
   /**
    * Id of this player set
    */
@@ -28,6 +30,7 @@ public class PlayerSet {
    */
   @Indexed(unique = true)
   @DocumentReference(lazy = true)
+  @Singular
   Set<Player> players;
 
   /**
@@ -35,7 +38,6 @@ public class PlayerSet {
    */
   @Getter(AccessLevel.NONE)
   String name;
-
 
   /**
    * Get the name of this playerSet
@@ -49,5 +51,4 @@ public class PlayerSet {
       return name;
     }
   }
-
 }

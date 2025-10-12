@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.NonNull;
 
 /**
  * A single player, consistent across games
@@ -25,5 +26,6 @@ public class Player {
    * Player name, must be unique
    */
   @Indexed(unique = true)
+  @NonNull
   private String name;
 }

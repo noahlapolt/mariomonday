@@ -1,8 +1,8 @@
 package mariomonday.backend.utils;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import mariomonday.backend.database.schema.Game;
 import mariomonday.backend.database.schema.GameSet;
@@ -19,9 +19,11 @@ public class TestDataUtil {
     return GameSet.builder().id("Idk im tired of dick stuff");
   }
 
-
   public static PlayerSet.PlayerSetBuilder createFakePlayerSet() {
-    return PlayerSet.builder().players(Set.of(createFakePlayer().build())).name("Yo, you seen this guy?").id("It's so big");
+    return PlayerSet.builder()
+      .players(Set.of(createFakePlayer().build()))
+      .name("Yo, you seen this guy?")
+      .id("It's so big");
   }
 
   public static Game.GameBuilder createFakeGame() {
@@ -29,7 +31,9 @@ public class TestDataUtil {
   }
 
   public static Set<PlayerSet> createNFakePlayers(int numberOfPlayers) {
-    return new HashSet<PlayerSet>(Collections.nCopies(numberOfPlayers, createFakePlayerSet().build()));
+    return IntStream.range(0, numberOfPlayers)
+      .boxed()
+      .map(num -> createFakePlayerSet().id(String.valueOf(num)).build())
+      .collect(Collectors.toSet());
   }
-
 }
