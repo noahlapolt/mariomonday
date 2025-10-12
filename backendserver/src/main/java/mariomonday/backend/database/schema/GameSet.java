@@ -25,6 +25,9 @@ public class GameSet {
   @Id
   private final String id;
 
+  @NonNull
+  private final Integer roundIndex;
+
   /**
    * The winners of the set
    */

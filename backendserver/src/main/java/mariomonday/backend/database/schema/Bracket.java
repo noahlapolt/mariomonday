@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
 
@@ -55,7 +56,7 @@ public class Bracket {
    */
   @DocumentReference(lazy = true)
   @Singular
-  private Set<Player> players;
+  private Set<PlayerSet> players;
 
   /**
    * The sets in this bracket
@@ -63,4 +64,11 @@ public class Bracket {
   @DocumentReference(lazy = true)
   @Singular
   private Set<GameSet> gameSets;
+
+  @Getter(lazy = true)
+  private final GameSet finalGameSet = gameSets
+    .stream()
+    .filter(gs -> gs.getRoundIndex() == 0)
+    .findFirst()
+    .orElse(null);
 }

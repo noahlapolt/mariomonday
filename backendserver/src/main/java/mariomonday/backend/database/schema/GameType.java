@@ -20,8 +20,8 @@ public enum GameType {
   /**
    * Why did I write these docs? Who cares. Of course this means Smash Ultimate
    */
-  SMASH_ULTIMATE_SINGLES(2, 1, 1), SMASH_ULTIMATE_DOUBLES(2, 1, 2);
-
+  SMASH_ULTIMATE_SINGLES(2, 1, 1),
+  SMASH_ULTIMATE_DOUBLES(2, 1, 2);
 
   private final int maxPlayerSets;
   private final int playerSetsToMoveOn;
@@ -33,5 +33,11 @@ public enum GameType {
     this.playersOnATeam = playersOnATeam;
   }
 
+  public int getMinPlayersForAGame() {
+    return playerSetsToMoveOn + 1;
+  }
 
+  public int getNumPreviousGames() {
+    return maxPlayerSets / playerSetsToMoveOn;
+  }
 }
