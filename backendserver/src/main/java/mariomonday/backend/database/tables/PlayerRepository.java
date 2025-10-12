@@ -1,7 +1,8 @@
 package mariomonday.backend.database.tables;
 
-import mariomonday.backend.database.schema.Player;
 import org.springframework.data.mongodb.repository.MongoRepository;
+
+import mariomonday.backend.database.schema.Player;
 
 /**
  * Table for players
