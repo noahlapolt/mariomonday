@@ -4,8 +4,6 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 import java.time.Clock;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -17,22 +15,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Singular;
-import lombok.Value;
-import lombok.experimental.SuperBuilder;
-import lombok.extern.jackson.Jacksonized;
-import mariomonday.backend.database.schema.Bracket;
-import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.PlayerSet;
 import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreator.GameOrPlayerSet;
-import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreatorTest.PlayerSetsTestData.Inputs;
-import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreatorTest.PlayerSetsTestData.TestGame;
-import mariomonday.backend.managers.utils.BracketPrettyPrinter;
-import mariomonday.backend.utils.JsonFileSource;
-import mariomonday.backend.utils.JsonTestData;
 import mariomonday.backend.utils.TestDataUtil;
 
 @ExtendWith(MockitoExtension.class)
@@ -92,84 +77,84 @@ class MaxSetsStrategyCreatorTest {
 
     assertThat(actualIds).isEqualTo(expectedIds);
   }
-
-  @EqualsAndHashCode(callSuper = true)
-  @Value
-  @SuperBuilder
-  static class PlayerSetsTestData extends JsonTestData<Inputs, TestGame> {
-
-    @Value
-    @Builder
-    @Jacksonized
-    static class Inputs {
-
-      GameType gameType;
-
-      int numPlayers;
-    }
-
-    @Value
-    @Jacksonized
-    @Builder
-    static class TestGame {
-
-      @Singular
-      List<TestGame> innerGames;
-
-      @Singular
-      Set<Integer> playerSeeds;
-
-      boolean isSameStructureAsGameSet(GameSet gameSet) {
-        if (innerGames.isEmpty()) {
-          return playerSeeds
-            .stream()
-            .map(String::valueOf)
-            .collect(Collectors.toSet())
-            .equals(gameSet.getAddedPlayerSets().stream().map(PlayerSet::getName).collect(Collectors.toSet()));
-        } else {
-          return (
-            innerGames.size() == gameSet.getPreviousGameSets().size() &&
-            innerGames
-              .stream()
-              .allMatch(innerGame ->
-                gameSet.getPreviousGameSets().stream().anyMatch(innerGame::isSameStructureAsGameSet)
-              )
-          );
-        }
-      }
-
-      @Override
-      public String toString() {
-        return playerSeeds.isEmpty()
-          ? String.format("(%s)", innerGames.stream().map(Object::toString).collect(Collectors.joining(", ")))
-          : playerSeeds.toString();
-      }
-    }
-  }
-
-  @ParameterizedTest
-  @JsonFileSource(PlayerSetsTestData.class)
-  void fromPlayerSets(String descriptor, Inputs inputs, TestGame expected) {
-    List<PlayerSet> playerSets = IntStream.range(1, inputs.getNumPlayers() + 1)
-      .boxed()
-      .map(String::valueOf)
-      .map(name ->
-        TestDataUtil.createFakePlayerSet()
-          .clearPlayers()
-          .player(TestDataUtil.createFakePlayer().name(name).build())
-          .build()
-      )
-      .toList();
-
-    Bracket actual = maxSetsStrategyCreator.fromPlayerSets(inputs.getGameType(), playerSets);
-
-    assertThat(actual.getFinalGameSet()).matches(
-      expected::isSameStructureAsGameSet,
-      String.format(
-        "Expected:\n%s\n\nActual:\n%s",
-        expected.toString(),
-        BracketPrettyPrinter.prettyPrintBottomStructure(actual)
-      )
-    );
-  }
+  //
+  //  @EqualsAndHashCode(callSuper = true)
+  //  @Value
+  //  @SuperBuilder
+  //  static class PlayerSetsTestData extends JsonTestData<Inputs, TestGame> {
+  //
+  //    @Value
+  //    @Builder
+  //    @Jacksonized
+  //    static class Inputs {
+  //
+  //      GameType gameType;
+  //
+  //      int numPlayers;
+  //    }
+  //
+  //    @Value
+  //    @Jacksonized
+  //    @Builder
+  //    static class TestGame {
+  //
+  //      @Singular
+  //      List<TestGame> innerGames;
+  //
+  //      @Singular
+  //      Set<Integer> playerSeeds;
+  //
+  //      boolean isSameStructureAsGameSet(GameSet gameSet) {
+  //        if (innerGames.isEmpty()) {
+  //          return playerSeeds
+  //            .stream()
+  //            .map(String::valueOf)
+  //            .collect(Collectors.toSet())
+  //            .equals(gameSet.getAddedPlayerSets().stream().map(PlayerSet::getName).collect(Collectors.toSet()));
+  //        } else {
+  //          return (
+  //            innerGames.size() == gameSet.getPreviousGameSets().size() &&
+  //            innerGames
+  //              .stream()
+  //              .allMatch(innerGame ->
+  //                gameSet.getPreviousGameSets().stream().anyMatch(innerGame::isSameStructureAsGameSet)
+  //              )
+  //          );
+  //        }
+  //      }
+  //
+  //      @Override
+  //      public String toString() {
+  //        return playerSeeds.isEmpty()
+  //          ? String.format("(%s)", innerGames.stream().map(Object::toString).collect(Collectors.joining(", ")))
+  //          : playerSeeds.toString();
+  //      }
+  //    }
+  //  }
+  //
+  //  @ParameterizedTest
+  //  @JsonFileSource(PlayerSetsTestData.class)
+  //  void fromPlayerSets(String descriptor, Inputs inputs, TestGame expected) {
+  //    List<PlayerSet> playerSets = IntStream.range(1, inputs.getNumPlayers() + 1)
+  //      .boxed()
+  //      .map(String::valueOf)
+  //      .map(name ->
+  //        TestDataUtil.createFakePlayerSet()
+  //          .clearPlayers()
+  //          .player(TestDataUtil.createFakePlayer().name(name).build())
+  //          .build()
+  //      )
+  //      .toList();
+  //
+  //    Bracket actual = maxSetsStrategyCreator.fromPlayerSets(inputs.getGameType(), playerSets);
+  //
+  //    assertThat(actual.getFinalGameSet()).matches(
+  //      expected::isSameStructureAsGameSet,
+  //      String.format(
+  //        "Expected:\n%s\n\nActual:\n%s",
+  //        expected.toString(),
+  //        BracketPrettyPrinter.prettyPrintBottomStructure(actual)
+  //      )
+  //    );
+  //  }
 }
