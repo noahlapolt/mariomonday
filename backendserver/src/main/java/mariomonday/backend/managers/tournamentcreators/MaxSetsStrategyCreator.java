@@ -50,12 +50,6 @@ public class MaxSetsStrategyCreator extends AbstractBracketCreator {
       );
     }
 
-    if (currentRound.size() != 1) {
-      throw new IllegalStateException(
-        "Bracket creation failed, expected 1 game set in final round but got " + currentRound.size()
-      );
-    }
-
     return bracketBuilder.gameSets(allGamesBuilder.build()).build();
   }
 

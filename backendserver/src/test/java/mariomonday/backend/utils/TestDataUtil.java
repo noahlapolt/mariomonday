@@ -1,6 +1,7 @@
 package mariomonday.backend.utils;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -12,22 +13,22 @@ import mariomonday.backend.database.schema.PlayerSet;
 public class TestDataUtil {
 
   public static Player.PlayerBuilder createFakePlayer() {
-    return Player.builder().name("Big Dick Joe").id("He's swangin");
+    return Player.builder().name("Big Dick Joe").id(UUID.randomUUID().toString());
   }
 
   public static GameSet.GameSetBuilder createFakeGameSet() {
-    return GameSet.builder().id("Idk im tired of dick stuff");
+    return GameSet.builder().id(UUID.randomUUID().toString());
   }
 
   public static PlayerSet.PlayerSetBuilder createFakePlayerSet() {
     return PlayerSet.builder()
       .players(Set.of(createFakePlayer().build()))
       .name("Yo, you seen this guy?")
-      .id("It's so big");
+      .id(UUID.randomUUID().toString());
   }
 
   public static Game.GameBuilder createFakeGame() {
-    return Game.builder().id("Whip those bad boys out");
+    return Game.builder().id(UUID.randomUUID().toString());
   }
 
   public static Set<PlayerSet> createNFakePlayers(int numberOfPlayers) {
