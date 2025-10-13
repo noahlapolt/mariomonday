@@ -1,18 +1,15 @@
 package mariomonday.backend.database.schema;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Set;
-
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
-
-import com.google.common.collect.ImmutableSet;
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Singular;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 /**
  * A set of games within a bracket, where the winner moves on

@@ -2,7 +2,6 @@ package mariomonday.backend.managers.utils;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.Player;

@@ -25,35 +25,39 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class LoginController {
 
-    /**
-     * Used to verify the given credentials are correct
-     */
-    @Autowired
-    private AuthenticationManager authenticationManager;
+  /**
+   * Used to verify the given credentials are correct
+   */
+  @Autowired
+  private AuthenticationManager authenticationManager;
 
-    /**
-     * Session repo to update on successful login
-     */
-    @Autowired
-    private HttpSessionSecurityContextRepository httpSessionSecurityContextRepository;
+  /**
+   * Session repo to update on successful login
+   */
+  @Autowired
+  private HttpSessionSecurityContextRepository httpSessionSecurityContextRepository;
 
-    /**
-     * Perform the login
-     */
-    @PostMapping("/login")
-    public ResponseEntity<Void> login(@RequestBody LoginRequest loginRequest,
-        HttpServletRequest request, HttpServletResponse response) {
-        // Authenticate user
-        Authentication authenticationRequest =
-            UsernamePasswordAuthenticationToken.unauthenticated(loginRequest.getUsername(), loginRequest.getPassword());
-        Authentication authenticationResponse =
-            this.authenticationManager.authenticate(authenticationRequest);
+  /**
+   * Perform the login
+   */
+  @PostMapping("/login")
+  public ResponseEntity<Void> login(
+    @RequestBody LoginRequest loginRequest,
+    HttpServletRequest request,
+    HttpServletResponse response
+  ) {
+    // Authenticate user
+    Authentication authenticationRequest = UsernamePasswordAuthenticationToken.unauthenticated(
+      loginRequest.getUsername(),
+      loginRequest.getPassword()
+    );
+    Authentication authenticationResponse = this.authenticationManager.authenticate(authenticationRequest);
 
-        // Store authenticated user in "Sessions" table to persist authentication
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authenticationResponse);
-        httpSessionSecurityContextRepository.saveContext(context, request, response);
+    // Store authenticated user in "Sessions" table to persist authentication
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
+    context.setAuthentication(authenticationResponse);
+    httpSessionSecurityContextRepository.saveContext(context, request, response);
 
-        return null;
-    }
+    return null;
+  }
 }

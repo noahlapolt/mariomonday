@@ -1,5 +1,6 @@
 package mariomonday.backend;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -19,8 +20,6 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
-import jakarta.servlet.DispatcherType;
-
 /**
  * Configuration of Spring Security stuff
  */
@@ -33,7 +32,6 @@ public class SecurityConfig {
 
   @Value("${admincredentials.password}")
   private String adminPassword;
-
 
   /**
    * Global storage of current user sessions. Used to keep track of who is logged in.
@@ -52,7 +50,9 @@ public class SecurityConfig {
   @Bean
   @ConditionalOnMissingBean(UserDetailsService.class)
   InMemoryUserDetailsManager inMemoryUserDetailsManager(PasswordEncoder passwordEncoder) {
-    return new InMemoryUserDetailsManager(User.withUsername(adminUsername).password(passwordEncoder.encode(adminPassword)).roles("USER").build());
+    return new InMemoryUserDetailsManager(
+      User.withUsername(adminUsername).password(passwordEncoder.encode(adminPassword)).roles("USER").build()
+    );
   }
 
   /**
@@ -63,7 +63,10 @@ public class SecurityConfig {
    * @return Authentication Manager
    */
   @Bean
-  public AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+  public AuthenticationManager authenticationManager(
+    UserDetailsService userDetailsService,
+    PasswordEncoder passwordEncoder
+  ) {
     DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService);
     authenticationProvider.setPasswordEncoder(passwordEncoder);
 
@@ -90,15 +93,19 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     // TODO figure out CSRF, maybe enable it later. Its just annoying without any frontend
-    http.csrf(AbstractHttpConfigurer::disable)
-        .authorizeHttpRequests((authorize) -> authorize.dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR)
-            .permitAll()
-            .requestMatchers(HttpMethod.GET)
-            .permitAll()
-            .requestMatchers("/login")
-            .permitAll()
-            .anyRequest()
-            .authenticated());
+    http
+      .csrf(AbstractHttpConfigurer::disable)
+      .authorizeHttpRequests(authorize ->
+        authorize
+          .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR)
+          .permitAll()
+          .requestMatchers(HttpMethod.GET)
+          .permitAll()
+          .requestMatchers("/login")
+          .permitAll()
+          .anyRequest()
+          .authenticated()
+      );
 
     return http.build();
   }

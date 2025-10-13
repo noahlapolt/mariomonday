@@ -1,13 +1,12 @@
 package mariomonday.backend;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
 import mariomonday.backend.database.tables.BracketRepository;
 import mariomonday.backend.database.tables.GameRepository;
 import mariomonday.backend.database.tables.GameSetRepository;
 import mariomonday.backend.database.tables.PlayerRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class Main {
