@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import mariomonday.backend.database.schema.Game;
 import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.Player;

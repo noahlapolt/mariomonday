@@ -1,11 +1,9 @@
 package mariomonday.backend.database.tables;
 
 import java.util.List;
-
-import org.springframework.data.mongodb.repository.MongoRepository;
-
 import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.GameType;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 /**
  * Table for brackets

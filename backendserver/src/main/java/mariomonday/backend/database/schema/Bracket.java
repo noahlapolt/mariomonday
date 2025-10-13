@@ -2,16 +2,14 @@ package mariomonday.backend.database.schema;
 
 import java.time.Instant;
 import java.util.Set;
-
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 /**
  * A tournament, containing multiple games

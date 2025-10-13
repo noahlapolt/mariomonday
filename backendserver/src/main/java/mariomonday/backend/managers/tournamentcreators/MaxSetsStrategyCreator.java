@@ -1,20 +1,17 @@
 package mariomonday.backend.managers.tournamentcreators;
 
-import java.time.Clock;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-
+import java.time.Clock;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.PlayerSet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 @Component
 public class MaxSetsStrategyCreator extends AbstractBracketCreator {

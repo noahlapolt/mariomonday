@@ -1,7 +1,6 @@
 package mariomonday.backend.managers.tournamentcreators;
 
 import java.util.List;
-
 import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.PlayerSet;
