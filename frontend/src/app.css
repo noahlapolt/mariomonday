@@ -1,7 +1,36 @@
+:root {
+  --prime: #0c0c0c;
+  --second: #890005;
+  --hover: #670003;
+  --text-prime: #ffffff;
+  --text-second: #ffffff;
+  --text-hover: #ffffff;
+}
+
 a {
-    text-decoration: none;
-    background-color: white;
-    text-align: center;
-    color: black;
-    padding: 0.2rem;
+  text-decoration: none;
+  background-color: white;
+  text-align: center;
+  color: black;
+  padding: 0.2rem;
+}
+
+button {
+  background-color: var(--second);
+  border-radius: 0.5rem;
+  border: none;
+  padding: 0.35rem;
+  margin: 0.15rem;
+  display: flex;
+  color: var(--text-prime)
+}
+
+button:hover {
+  background-color: var(--hover);
+  color: var(--text-hover);
+}
+
+svg {
+  width: 1rem;
+  fill: var(--text-prime);
 }
