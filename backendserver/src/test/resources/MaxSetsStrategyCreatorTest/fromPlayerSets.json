@@ -1,0 +1,227 @@
+[
+  {
+    "descriptor": "16 players in Smash Ultimate Singles",
+    "input": {
+      "gameType": "SMASH_ULTIMATE_SINGLES",
+      "numPlayers": 16
+    },
+    "expected": {
+      "innerGames": [
+        {
+          "innerGames": [
+            {
+              "innerGames": [
+                {
+                  "playerSeeds": [
+                    1,
+                    16
+                  ]
+                },
+                {
+                  "playerSeeds": [
+                    8,
+                    9
+                  ]
+                }
+              ]
+            },
+            {
+              "innerGames": [
+                {
+                  "playerSeeds": [
+                    5,
+                    12
+                  ]
+                },
+                {
+                  "playerSeeds": [
+                    4,
+                    13
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "innerGames": [
+            {
+              "innerGames": [
+                {
+                  "playerSeeds": [
+                    3,
+                    14
+                  ]
+                },
+                {
+                  "playerSeeds": [
+                    6,
+                    11
+                  ]
+                }
+              ]
+            },
+            {
+              "innerGames": [
+                {
+                  "playerSeeds": [
+                    7,
+                    10
+                  ]
+                },
+                {
+                  "playerSeeds": [
+                    2,
+                    15
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "descriptor": "16 players in Mario Kart 8",
+    "input": {
+      "gameType": "MARIO_KART_8",
+      "numPlayers": 16
+    },
+    "expected": {
+      "innerGames": [
+        {
+          "innerGames": [
+            {
+              "playerSeeds": [
+                1,
+                8,
+                9,
+                16
+              ]
+            },
+            {
+              "playerSeeds": [
+                4,
+                5,
+                12,
+                13
+              ]
+            }
+          ]
+        },
+        {
+          "innerGames": [
+            {
+              "playerSeeds": [
+                2,
+                7,
+                10,
+                15
+              ]
+            },
+            {
+              "playerSeeds": [
+                3,
+                6,
+                11,
+                14
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "descriptor": "8 players in smash ultimate singles",
+    "input": {
+      "gameType": "SMASH_ULTIMATE_SINGLES",
+      "numPlayers": 8
+    },
+    "expected": {
+      "innerGames": [
+        {
+          "innerGames": [
+            {
+              "playerSeeds": [
+                1,
+                8
+              ]
+            },
+            {
+              "playerSeeds": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        {
+          "innerGames": [
+            {
+              "playerSeeds": [
+                3,
+                6
+              ]
+            },
+            {
+              "playerSeeds": [
+                2,
+                7
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "descriptor": "13 players in Mario Kart 8",
+    "input": {
+      "gameType": "MARIO_KART_8",
+      "numPlayers": 13
+    },
+    "expected": {
+      "innerGames": [
+        {
+          "innerGames": [
+            {
+              "playerSeeds": [
+                1,
+                8,
+                9
+              ]
+            },
+            {
+              "playerSeeds": [
+                4,
+                5,
+                12,
+                13
+              ]
+            }
+          ]
+        },
+        {
+          "innerGames": [
+            {
+              "playerSeeds": [
+                2,
+                7,
+                10
+              ]
+            },
+            {
+              "playerSeeds": [
+                3,
+                6,
+                11
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

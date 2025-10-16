@@ -17,6 +17,7 @@
 	- ID
 	- Name
 		- Unique
+    - Map from game type to ELO
 - Bracket
 	- ID
 	- Date Time
@@ -30,7 +31,7 @@
 	- Bracket ID
 	- Game Type
 	- Winners
-	- Players
+	- Losers
 	- Number of Games
 	- Round
 - Game
@@ -49,17 +50,30 @@
 	- Image
 	- BIO
 ## API
-- Get Players
-- Create Players
-- Update Player
-- Create Bracket
-	- Creates all sets
-- Add Player to Bracket (late entry)
-- Update Set
-- Get Active Bracket
-- Get Stats
-- Get Universal Stats
-- Get Leaderboard
+- Admin Only
+  - Create Player
+    - Should have default ELO when created
+  - Update Player
+    - Should only be able to update name, ELO changes should come from complete bracket API
+  - Create Bracket
+    - Should take in list of players, then sort players by ELO, perform a locally randomized sort, and feed that into bracket generation algo
+      - Local random sort can be from just adding noise to each player's ELO
+    - Creates all sets
+  - Add Player to Bracket (late entry)
+  - Update Set
+    - Should be possible even after a set is "completed", in case the incorrect winner was selected or something
+    - Should no longer be possible once bracket set is from is completed
+  - Complete bracket
+    - Should only be possible when all games in a bracket are complete
+    - Add winners, calculate ELO changes for all players in bracket and perform updates.
+    - Update bracket object with total round count
+- Everyone
+  - Log In (Jake)
+  - Get Players
+  - Get Active Bracket
+  - Get Stats
+  - Get Universal Stats
+  - Get Leaderboard
 ## Domain
 - Internal (the avenue)?
 - mariomonday.net?
@@ -68,4 +82,3 @@
 - History Page
 - Venmo QR code is the better link
 	- https://venmo.com/username?txn=Text&amount=amount
-- 
