@@ -63,10 +63,11 @@ public class Bracket {
   @Singular
   private Set<GameSet> gameSets;
 
-  @Getter(lazy = true)
-  private final GameSet finalGameSet = gameSets
-    .stream()
-    .filter(gs -> gs.getRoundIndex() == 0)
-    .findFirst()
-    .orElse(null);
+  public GameSet getFinalGameSet() {
+    return gameSets
+        .stream()
+        .filter(gs -> gs.getRoundIndex() == 0)
+        .findFirst()
+        .orElse(null);
+  }
 }
