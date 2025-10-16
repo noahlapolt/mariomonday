@@ -1,5 +1,5 @@
 type Bracket = {
-  id: string;
+  id?: string;
   date: Date;
   rounds: number;
   winners: Set<Player>;
@@ -10,7 +10,7 @@ type Bracket = {
 };
 
 type Game = {
-  id: string;
+  id?: string;
   winners: Set<PlayerSet>;
   playerSets: Set<PlayerSet>;
 };
@@ -33,13 +33,13 @@ type GameType = {
 };
 
 type Player = {
-  id: string;
+  id?: string;
   name: string;
   elo: Map<GameType, number>;
 };
 
 type PlayerSet = {
-  id: string;
+  id?: string;
   players: Set<Player>;
   name: string;
 }

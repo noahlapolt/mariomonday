@@ -2,11 +2,13 @@
   import { SvelteSet } from "svelte/reactivity";
   import Search from "$lib/components/Search.svelte";
   import TeamInfo from "$lib/components/TeamInfo.svelte";
+  import { PUBLIC_API_URL } from "$env/static/public";
 
   let players: Player[] = $state([]);
   let playingTeams: SvelteSet<PlayerSet> = $state(new SvelteSet());
   let playerOptions: SvelteSet<Player> = $state(new SvelteSet());
   let searchTerm: string = $state("");
+  let selectedTeam: PlayerSet | undefined = $state();
   let gameType: GameType = $state({
     maxPlayerSets: 2,
     playerSetsToMoveOn: 1,
@@ -77,13 +79,18 @@
    * @param player The player being added.
    */
   const addPlayer = (player: Player) => {
-    playingPlayers.add({
-      id: "aaa",
-      players: new SvelteSet([player]),
-      name: "Team Based",
-    });
+    if (selectedTeam === undefined || gameType.playersOnATeam === 1) {
+      selectedTeam = {
+        id: "",
+        name: "New Team",
+        players: new SvelteSet([player]),
+      };
 
-    // Create player set on API
+      playingTeams.add(selectedTeam);
+    } else {
+      selectedTeam.players.add(player);
+      selectedTeam = undefined;
+    }
   };
 
   /**
@@ -93,7 +100,7 @@
   const createPlayer = () => {
     // TODO add authentication.
     const HEADER = { method: "POST" };
-    fetch(`${API}/player`, HEADER)
+    fetch(`${PUBLIC_API_URL}/player`, HEADER)
       .then((response) => {
         return response.json();
       })
@@ -108,17 +115,14 @@
         return false;
       });
 
-    playingTeams.add({
-      id: "",
-      players: new SvelteSet([
-        {
-          id: "Random",
-          name: searchTerm,
-          elo: new Map<GameType, number>(),
-        },
-      ]),
-      name: "",
-    });
+    addPlayer({ id: "", name: searchTerm, elo: new Map<GameType, number>() });
+    searchTerm = "";
+    let scrollArea = document.getElementById("playing");
+    if (scrollArea)
+      scrollArea.scrollTo({
+        top: scrollArea.scrollHeight,
+        behavior: "smooth",
+      });
   };
 
   /**
@@ -139,26 +143,28 @@
 
 <div id="setup">
   <div id="players">
-    <div>
-      <Search bind:searchTerm search={searchPlayers} {createPlayer}>
-        {#each playerOptions as option}
-          <button
-            onclick={() => {
-              addPlayer(option);
-              playerOptions = new SvelteSet();
-              searchTerm = "";
-            }}
-          >
-            {option.name}
-          </button>
-        {/each}
-      </Search>
-    </div>
+    <Search id="search" bind:searchTerm search={searchPlayers} {createPlayer}>
+      {#each playerOptions as option}
+        <button
+          onclick={() => {
+            addPlayer(option);
+            playerOptions = new SvelteSet();
+            searchTerm = "";
+          }}
+        >
+          {option.name}
+        </button>
+      {/each}
+    </Search>
     <div id="playing">
       {#each playingTeams as team}
         <TeamInfo
           {team}
           {gameType}
+          add={() => {
+            document.getElementById("search")?.focus();
+            selectedTeam = team;
+          }}
           remove={() => {
             playingTeams.delete(team);
           }}
@@ -191,6 +197,8 @@
   }
 
   #playing {
+    display: flex;
+    flex-direction: column-reverse;
     background-color: var(--prime);
     flex-grow: 1;
     border-radius: 0.5rem;
