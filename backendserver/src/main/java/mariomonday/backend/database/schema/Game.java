@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 /**
@@ -12,6 +13,7 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
  */
 @Value
 @Builder
+@Document
 public class Game {
 
   /**
