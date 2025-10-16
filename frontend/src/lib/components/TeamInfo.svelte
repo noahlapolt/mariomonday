@@ -6,21 +6,27 @@
   let {
     team,
     gameType,
+    add,
     remove,
     children,
   }: {
     team: PlayerSet;
     gameType: GameType;
+    add?: () => void;
     remove?: (team: PlayerSet) => void;
     children?: Snippet;
   } = $props();
-
-  let adding = $state(false);
 </script>
 
 <div class={gameType.playersOnATeam > 1 ? "team" : ""}>
   {#if gameType.playersOnATeam > 1}
-    {team.name}
+    <label
+      >Team Name: <input
+        class="teamName"
+        value={team.name}
+        type="text"
+      /></label
+    >
   {/if}
   {#each team.players as player}
     <PlayerInfo
@@ -36,12 +42,14 @@
       {@render children?.()}</PlayerInfo
     >
   {/each}
-  {#if team.players.size < gameType.playersOnATeam && !adding}
+  {#if team.players.size < gameType.playersOnATeam}
     <button
       class="teamAdd"
       aria-label="add player to a team"
       onclick={() => {
-        adding = true;
+        if (add !== undefined) {
+          add();
+        }
       }}
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
@@ -51,9 +59,6 @@
         />
       </svg>
     </button>
-  {/if}
-  {#if adding}
-    <Search></Search>
   {/if}
 </div>
 
@@ -66,6 +71,16 @@
     border-radius: 0.5rem;
     margin: 0.5rem;
     padding: 0.5rem 0;
+  }
+
+  .teamName {
+    background-color: var(--prime);
+    color: var(--text-prime);
+    border: none;
+  }
+
+  .teamName:focus {
+    outline: 1px solid var(--second);
   }
 
   .teamAdd {

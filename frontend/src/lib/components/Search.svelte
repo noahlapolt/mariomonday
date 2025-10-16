@@ -2,11 +2,13 @@
   import type { Snippet } from "svelte";
 
   let {
+    id,
     searchTerm = $bindable(),
     search,
     createPlayer,
     children,
   }: {
+    id?: string;
     searchTerm: string;
     search: () => void;
     createPlayer?: () => void;
@@ -16,7 +18,7 @@
   let selected = $state(false);
 </script>
 
-<div id="search" style={selected ? "border-color: var(--second)" : ""}>
+<div class="search" style={selected ? "border-color: var(--second)" : ""}>
   <label>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
       <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
@@ -25,6 +27,7 @@
       />
     </svg>
     <input
+      {id}
       bind:value={searchTerm}
       onfocus={() => {
         selected = true;
@@ -67,31 +70,13 @@
 
 <style>
   /* Search bar related css */
-  #search {
+  .search {
     position: relative;
     justify-content: space-between;
     padding: 0.4rem;
     background-color: var(--prime);
-    border: 2px solid var(--prime);
+    border: 4px solid var(--prime);
     border-radius: 0.5rem;
-  }
-
-  div {
-    display: flex;
-  }
-
-  label {
-    display: flex;
-  }
-
-  input {
-    background-color: transparent;
-    border: none;
-    color: var(--text-prime);
-  }
-
-  input:focus {
-    outline: none;
   }
 
   .results {
@@ -101,5 +86,25 @@
     left: 0;
     background-color: var(--prime);
     width: 100%;
+  }
+
+  div {
+    display: flex;
+  }
+
+  label {
+    display: flex;
+    flex-grow: 1;
+  }
+
+  input {
+    background-color: transparent;
+    border: none;
+    color: var(--text-prime);
+    flex-grow: 1;
+  }
+
+  input:focus {
+    outline: none;
   }
 </style>
