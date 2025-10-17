@@ -4,5 +4,6 @@
     "source.fixAll.eslint": "always"
   },
   "editor.formatOnSave": true,
-  "files.autoSave": "onFocusChange"
+  "files.autoSave": "onFocusChange",
+  "java.compile.nullAnalysis.mode": "disabled"
 }

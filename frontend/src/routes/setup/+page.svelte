@@ -3,6 +3,7 @@
   import Search from "$lib/components/Search.svelte";
   import TeamInfo from "$lib/components/TeamInfo.svelte";
   import { PUBLIC_API_URL } from "$env/static/public";
+  import { onMount } from "svelte";
 
   let players: Player[] = $state([]);
   let playingTeams: SvelteSet<PlayerSet> = $state(new SvelteSet());
@@ -13,6 +14,23 @@
     maxPlayerSets: 2,
     playerSetsToMoveOn: 1,
     playersOnATeam: 2,
+  });
+
+  onMount(() => {
+    /* Fetch players */
+    const Players_INIT: RequestInit = {
+      method: "GET",
+    };
+    fetch(`${PUBLIC_API_URL}/player`, Players_INIT)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        return true;
+      })
+      .catch((e) => {
+        console.log("There was an error getting the players.", e);
+        return false;
+      });
   });
 
   // Evil data
@@ -99,8 +117,19 @@
    */
   const createPlayer = () => {
     // TODO add authentication.
-    const HEADER = { method: "POST" };
-    fetch(`${PUBLIC_API_URL}/player`, HEADER)
+    const INIT: RequestInit = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      mode: "no-cors",
+      body: JSON.stringify({
+        id: "",
+        name: searchTerm,
+        elo: new Map<GameType, number>(),
+      }),
+    };
+    fetch(`${PUBLIC_API_URL}/player`, INIT)
       .then((response) => {
         return response.json();
       })
@@ -109,20 +138,14 @@
         // TODO figure out what data was added to the database.
         return true;
       })
-      .catch(() => {
-        console.log("Failed to create the player");
+      .catch((err) => {
+        console.log("Failed to create the player" + err);
         // TODO tell the user the error
         return false;
       });
 
     addPlayer({ id: "", name: searchTerm, elo: new Map<GameType, number>() });
     searchTerm = "";
-    let scrollArea = document.getElementById("playing");
-    if (scrollArea)
-      scrollArea.scrollTo({
-        top: scrollArea.scrollHeight,
-        behavior: "smooth",
-      });
   };
 
   /**

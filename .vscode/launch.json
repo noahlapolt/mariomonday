@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-Main<backendserver>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "mariomonday.backend.Main",
+            "projectName": "backendserver",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
