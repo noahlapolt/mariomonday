@@ -8,12 +8,14 @@
     gameType,
     add,
     remove,
+    removePlayer,
     children,
   }: {
     team: PlayerSet;
     gameType: GameType;
     add?: () => void;
     remove?: (team: PlayerSet) => void;
+    removePlayer?: (player: Player) => void;
     children?: Snippet;
   } = $props();
 </script>
@@ -35,6 +37,7 @@
       remove={remove !== undefined
         ? (player) => {
             team.players.delete(player);
+            if (removePlayer !== undefined) removePlayer(player);
             if (team.players.size === 0) remove(team);
           }
         : undefined}

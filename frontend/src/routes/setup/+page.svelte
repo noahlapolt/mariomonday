@@ -5,68 +5,53 @@
   import { PUBLIC_API_URL } from "$env/static/public";
   import { onMount } from "svelte";
 
+  /* Manage players */
   let players: Player[] = $state([]);
   let playingTeams: SvelteSet<PlayerSet> = $state(new SvelteSet());
   let playerOptions: SvelteSet<Player> = $state(new SvelteSet());
-  let searchTerm: string = $state("");
   let selectedTeam: PlayerSet | undefined = $state();
+  let playerCount: number = $state(0);
+
+  /* Search text, used for new player. Initial game type */
+  let searchTerm: string = $state("");
   let gameType: GameType = $state({
     maxPlayerSets: 2,
     playerSetsToMoveOn: 1,
-    playersOnATeam: 2,
+    playersOnATeam: 1,
   });
 
   onMount(() => {
-    /* Fetch players */
+    /* Setup the game type from URL. */
+    const urlParams = new URL(window.location.toString()).searchParams;
+    gameType = {
+      maxPlayerSets: parseInt(urlParams.get("max") || "2"),
+      playerSetsToMoveOn: parseInt(urlParams.get("move") || "1"),
+      playersOnATeam: parseInt(urlParams.get("team") || "1"),
+    };
+
+    /* Setup players from database. */
     const Players_INIT: RequestInit = {
       method: "GET",
     };
     fetch(`${PUBLIC_API_URL}/player`, Players_INIT)
       .then((response) => response.json())
       .then((data) => {
-        console.log(data);
+        players = data;
         return true;
       })
       .catch((e) => {
         console.log("There was an error getting the players.", e);
         return false;
       });
+
+    /* Load playing teams from cookies. */
   });
-
-  // Evil data
-  players = [
-    { id: "0", name: "Noah", elo: new Map<GameType, number>() },
-    { id: "0", name: "Reed", elo: new Map<GameType, number>() },
-    { id: "0", name: "Jack", elo: new Map<GameType, number>() },
-    { id: "0", name: "Zach", elo: new Map<GameType, number>() },
-    { id: "10", name: "Zach1", elo: new Map<GameType, number>() },
-  ];
-
-  // Evil Code
-  for (let i = 0; i < 20; i++) {
-    playingTeams.add({
-      id: "",
-      players: new SvelteSet([
-        {
-          id: (Math.random() * 100).toString(),
-          name: "Noah",
-          elo: new Map<GameType, number>([[gameType, 15]]),
-        },
-        {
-          id: (Math.random() * 100).toString(),
-          name: "Harrison Hull",
-          elo: new Map<GameType, number>([[gameType, 20]]),
-        },
-      ]),
-      name: "Testing",
-    });
-  }
 
   /**
    * Searches through all of the players. Picks the first four players
    * that match the search term.
    *
-   * Time complexity O(n), where n is the length of players.
+   * Time complexity O(n), where n is the length of players. Optimize if needed.
    */
   const searchPlayers = () => {
     let found = 0;
@@ -109,11 +94,11 @@
       selectedTeam.players.add(player);
       selectedTeam = undefined;
     }
+    playerCount++;
   };
 
   /**
-   * Creates a player from a name.
-   * @param name The name of the player.
+   * Creates a player from the current searchTerm value.
    */
   const createPlayer = () => {
     // TODO add authentication.
@@ -139,28 +124,12 @@
         return true;
       })
       .catch((err) => {
-        console.log("Failed to create the player" + err);
-        // TODO tell the user the error
+        console.log("Failed to create the player.", err);
         return false;
       });
 
     addPlayer({ id: "", name: searchTerm, elo: new Map<GameType, number>() });
     searchTerm = "";
-  };
-
-  /**
-   * Simple function to count the number of players.
-   */
-  const countPlayers = () => {
-    let count = 0;
-
-    playingTeams.forEach((team) => {
-      team.players.forEach(() => {
-        count++;
-      });
-    });
-
-    return count;
   };
 </script>
 
@@ -180,7 +149,8 @@
       {/each}
     </Search>
     <div id="playing">
-      {#each playingTeams as team}
+      <!--Uh oh this takes alot of time? Optimize if needed.-->
+      {#each Array.from(playingTeams).reverse() as team}
         <TeamInfo
           {team}
           {gameType}
@@ -191,11 +161,14 @@
           remove={() => {
             playingTeams.delete(team);
           }}
+          removePlayer={() => {
+            playerCount--;
+          }}
         />
       {/each}
     </div>
     <button>
-      Start Tournament: {countPlayers()} player{countPlayers() > 1 ? "s" : ""}
+      Start Tournament: {playerCount} player{playerCount > 1 ? "s" : ""}
     </button>
   </div>
 </div>
@@ -221,7 +194,7 @@
 
   #playing {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     background-color: var(--prime);
     flex-grow: 1;
     border-radius: 0.5rem;
