@@ -185,7 +185,7 @@
 
   #playing {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     background-color: var(--prime);
     flex-grow: 1;
     border-radius: 0.5rem;
