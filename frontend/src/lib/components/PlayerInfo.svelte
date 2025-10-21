@@ -8,7 +8,7 @@
     children,
   }: {
     player: Player;
-    gameType?: GameType;
+    gameType?: string;
     remove?: (player: Player) => void;
     children?: Snippet;
   } = $props();
@@ -18,7 +18,7 @@
   <div>
     {player.name}
     {#if gameType !== undefined}
-      Elo: {player.elo.get(gameType)}
+      Elo: {player.eloMap[gameType]}
     {/if}
   </div>
 

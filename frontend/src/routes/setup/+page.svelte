@@ -4,6 +4,7 @@
   import TeamInfo from "$lib/components/TeamInfo.svelte";
   import { PUBLIC_API_URL } from "$env/static/public";
   import { onMount } from "svelte";
+  import { GameTypes } from "$lib/components/Utils.svelte";
 
   /* Manage player information. */
   let players: Player[] = $state([]);
@@ -14,11 +15,7 @@
 
   /* Manage game type and search. */
   let searchTerm: string = $state("");
-  let gameType: GameType = $state({
-    maxPlayerSets: 2,
-    playerSetsToMoveOn: 1,
-    playersOnATeam: 1,
-  });
+  let gameType: string = $state("SMASH_ULTIMATE_SINGLES");
 
   onMount(() => {
     /* Fetch players */
@@ -27,7 +24,7 @@
     };
     fetch(`${PUBLIC_API_URL}/player`, Players_INIT)
       .then((response) => response.json())
-      .then((data) => {
+      .then((data: Player[]) => {
         players = data;
         return true;
       })
@@ -38,12 +35,24 @@
 
     /* Get game type */
     const urlParams = new URL(window.location.href).searchParams;
-    gameType = {
-      maxPlayerSets: parseInt(urlParams.get("max") || "2"),
-      playerSetsToMoveOn: parseInt(urlParams.get("move") || "1"),
-      playersOnATeam: parseInt(urlParams.get("team") || "1"),
-    };
+    gameType = urlParams.get("mode") || "SMASH_ULTIMATE_SINGLES";
+
+    /* Check for cookies */
+    const cookie = document.cookie.split(";");
+    if (cookie.length > 1) {
+      //playingTeams = JSON.parse(cookie[0].split("=")[1]);
+    }
   });
+
+  /**
+   * Function that updates the cookie.
+   */
+  const updateCookie = () => {
+    // This cookie only lasts for a day
+    const expires = new Date(Date.now() + 86400000).toUTCString();
+    document.cookie = `playingTeams=${JSON.stringify(playingTeams)}; expires=${expires}; path=/`;
+    console.log(document.cookie, JSON.stringify(playingTeams), playingTeams);
+  };
 
   /**
    * Searches through all of the players. Picks the first four players
@@ -80,7 +89,10 @@
    * @param player The player being added.
    */
   const addPlayer = (player: Player) => {
-    if (selectedTeam === undefined || gameType.playersOnATeam === 1) {
+    if (
+      selectedTeam === undefined ||
+      GameTypes[gameType].playersOnATeam === 1
+    ) {
       selectedTeam = {
         id: "",
         name: "New Team",
@@ -93,6 +105,7 @@
       selectedTeam = undefined;
     }
     playerCount++;
+    updateCookie();
   };
 
   /**
@@ -101,9 +114,9 @@
    */
   const createPlayer = () => {
     const newPlayer = {
-      id: "",
+      id: `id-${Math.random() * 1000}`,
       name: searchTerm,
-      elo: new Map<GameType, number>(),
+      eloMap: {},
     };
     const player_INIT: RequestInit = {
       method: "POST",
@@ -154,6 +167,7 @@
           }}
           removePlayer={() => {
             playerCount--;
+            updateCookie();
           }}
         />
       {/each}

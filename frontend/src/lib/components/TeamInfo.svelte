@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import PlayerInfo from "./PlayerInfo.svelte";
+  import { GameTypes } from "./Utils.svelte";
 
   let {
     team,
@@ -11,7 +12,7 @@
     children,
   }: {
     team: PlayerSet;
-    gameType: GameType;
+    gameType: string;
     add?: () => void;
     remove?: (team: PlayerSet) => void;
     removePlayer?: (player: Player) => void;
@@ -19,8 +20,8 @@
   } = $props();
 </script>
 
-<div class={gameType.playersOnATeam > 1 ? "team" : ""}>
-  {#if gameType.playersOnATeam > 1}
+<div class={GameTypes[gameType].playersOnATeam > 1 ? "team" : ""}>
+  {#if GameTypes[gameType].playersOnATeam > 1}
     <label
       >Team Name: <input
         class="teamName"
@@ -44,7 +45,7 @@
       {@render children?.()}</PlayerInfo
     >
   {/each}
-  {#if team.players.size < gameType.playersOnATeam}
+  {#if team.players.size < GameTypes[gameType].playersOnATeam}
     <button
       class="teamAdd"
       aria-label="add player to a team"
