@@ -30,22 +30,22 @@
       /></label
     >
   {/if}
-  {#each team.players as player}
+  {#each team.players as player, index}
     <PlayerInfo
       {player}
       {gameType}
       remove={remove !== undefined
         ? (player) => {
-            team.players.delete(player);
+            team.players.splice(index, 1);
             if (removePlayer) removePlayer(player);
-            if (team.players.size === 0) remove(team);
+            if (team.players.length === 0) remove(team);
           }
         : undefined}
     >
       {@render children?.()}</PlayerInfo
     >
   {/each}
-  {#if team.players.size < GameTypes[gameType].playersOnATeam}
+  {#if team.players.length < GameTypes[gameType].playersOnATeam}
     <button
       class="teamAdd"
       aria-label="add player to a team"

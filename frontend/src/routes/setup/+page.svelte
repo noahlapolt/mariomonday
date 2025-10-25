@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { SvelteSet } from "svelte/reactivity";
   import Search from "$lib/components/Search.svelte";
   import TeamInfo from "$lib/components/TeamInfo.svelte";
   import { PUBLIC_API_URL } from "$env/static/public";
@@ -7,9 +6,10 @@
   import { GameTypes } from "$lib/components/Utils.svelte";
 
   /* Manage player information. */
+  /* I was going to treat the data as sets, but sets are not in JSON really. */
   let players: Player[] = $state([]);
-  let playingTeams: SvelteSet<PlayerSet> = $state(new SvelteSet());
-  let playerOptions: SvelteSet<Player> = $state(new SvelteSet());
+  let playingTeams: PlayerSet[] = $state([]);
+  let playerOptions: Player[] = $state([]);
   let selectedTeam: PlayerSet | undefined = $state();
   let playerCount: number = $state(0);
 
@@ -38,20 +38,18 @@
     gameType = urlParams.get("mode") || "SMASH_ULTIMATE_SINGLES";
 
     /* Check for cookies */
-    const cookie = document.cookie.split(";");
-    if (cookie.length > 1) {
-      //playingTeams = JSON.parse(cookie[0].split("=")[1]);
-    }
+    const cookie = document.cookie.split("=");
+    if (cookie.length > 1) playingTeams = JSON.parse(cookie[1]);
   });
 
   /**
-   * Function that updates the cookie.
+   * This function takes the current playingTeams set and turns it into
+   * a string. Then saves it as a cookie.
    */
-  const updateCookie = () => {
+  const saveTeams = () => {
     // This cookie only lasts for a day
     const expires = new Date(Date.now() + 86400000).toUTCString();
     document.cookie = `playingTeams=${JSON.stringify(playingTeams)}; expires=${expires}; path=/`;
-    console.log(document.cookie, JSON.stringify(playingTeams), playingTeams);
   };
 
   /**
@@ -63,21 +61,17 @@
   const searchPlayers = () => {
     let found = 0;
     let index = 0;
-    playerOptions = new SvelteSet();
+    playerOptions = [];
     while (searchTerm !== "" && index < players.length && found < 4) {
-      // Checks if the player is already playing.
-      let alreadyPlaying = false;
-      playingTeams.forEach((team) => {
-        if (!alreadyPlaying) alreadyPlaying = team.players.has(players[index]);
-      });
-
       // Adds the player to the list if they are not already playing, exist, and there are
       // less than 4 results
       if (
         players[index].name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !alreadyPlaying
+        playingTeams.find(({ players }) =>
+          players.find((player) => player === players[index]),
+        ) === undefined
       ) {
-        playerOptions.add(players[index]);
+        playerOptions.push(players[index]);
         found++;
       }
       index++;
@@ -96,16 +90,16 @@
       selectedTeam = {
         id: "",
         name: "New Team",
-        players: new SvelteSet([player]),
+        players: [player],
       };
 
-      playingTeams.add(selectedTeam);
+      playingTeams.push(selectedTeam);
     } else {
-      selectedTeam.players.add(player);
+      selectedTeam.players.push(player);
       selectedTeam = undefined;
     }
     playerCount++;
-    updateCookie();
+    saveTeams();
   };
 
   /**
@@ -144,7 +138,7 @@
         <button
           onclick={() => {
             addPlayer(option);
-            playerOptions = new SvelteSet();
+            playerOptions = [];
             searchTerm = "";
           }}
         >
@@ -154,7 +148,7 @@
     </Search>
     <div id="playing">
       <!--This is hella slow should be optimized.-->
-      {#each Array.from(playingTeams).reverse() as team}
+      {#each Array.from(playingTeams).reverse() as team, index}
         <TeamInfo
           {team}
           {gameType}
@@ -163,17 +157,17 @@
             selectedTeam = team;
           }}
           remove={() => {
-            playingTeams.delete(team);
+            playingTeams.splice(index, 1);
           }}
           removePlayer={() => {
             playerCount--;
-            updateCookie();
+            saveTeams();
           }}
         />
       {/each}
     </div>
     <button>
-      Start Tournament: {playerCount} player{playerCount > 1 ? "s" : ""}
+      Start Tournament: {playerCount} player{playerCount === 1 ? "" : "s"}
     </button>
   </div>
 </div>

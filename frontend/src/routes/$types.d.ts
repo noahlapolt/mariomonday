@@ -2,27 +2,27 @@ type Bracket = {
   id?: string;
   date: Date;
   rounds: number;
-  winners: Set<Player>;
+  winners: Player[];
   gameType: string;
-  players: Set<PlayerSet>;
-  gameSets: Set<GameSet>;
+  players: PlayerSet[];
+  gameSets: GameSet[];
   finalGameSet: GameSet;
 };
 
 type Game = {
   id?: string;
-  winners: Set<PlayerSet>;
-  playerSets: Set<PlayerSet>;
+  winners: PlayerSet[];
+  playerSets: PlayerSet[];
 };
 
 type GameSet = {
   id: string;
   roundIndex: number;
-  winners: Set<PlayerSet>;
-  losers: Set<PlayerSet>;
-  addedPlayerSets: Set<PlayerSet>;
+  winners: PlayerSet[];
+  losers: PlayerSet[];
+  addedPlayerSets: PlayerSet[];
   gameType: string;
-  previousGameSets: Set<GameSet>;
+  previousGameSets: GameSet[];
   games: Game[];
 };
 
@@ -40,6 +40,6 @@ type Player = {
 
 type PlayerSet = {
   id?: string;
-  players: Set<Player>;
+  players: Player[];
   name: string;
 };
