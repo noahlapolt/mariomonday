@@ -2,44 +2,44 @@ type Bracket = {
   id?: string;
   date: Date;
   rounds: number;
-  winners: Set<Player>;
-  gameType: GameType;
-  players: Set<PlayerSet>;
-  gameSets: Set<GameSet>;
+  winners: Player[];
+  gameType: string;
+  players: PlayerSet[];
+  gameSets: GameSet[];
   finalGameSet: GameSet;
 };
 
 type Game = {
   id?: string;
-  winners: Set<PlayerSet>;
-  playerSets: Set<PlayerSet>;
+  winners: PlayerSet[];
+  playerSets: PlayerSet[];
 };
 
 type GameSet = {
   id: string;
   roundIndex: number;
-  winners: Set<PlayerSet>;
-  losers: Set<PlayerSet>;
-  addedPlayerSets: Set<PlayerSet>;
-  gameType: GameType;
-  previousGameSets: Set<GameSet>;
+  winners: PlayerSet[];
+  losers: PlayerSet[];
+  addedPlayerSets: PlayerSet[];
+  gameType: string;
+  previousGameSets: GameSet[];
   games: Game[];
 };
 
 type GameType = {
-  maxPlayerSets: number;
-  playerSetsToMoveOn: number;
-  playersOnATeam: number;
+  maxPlayerSets: number,
+  playerSetsToMoveOn: number,
+  playersOnATeam: number,
 };
 
 type Player = {
   id?: string;
   name: string;
-  elo: Map<GameType, number>;
+  eloMap: Record<string, number>;
 };
 
 type PlayerSet = {
   id?: string;
-  players: Set<Player>;
+  players: Player[];
   name: string;
-}
+};

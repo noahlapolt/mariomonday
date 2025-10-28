@@ -1,24 +1,21 @@
 <script lang="ts">
-  import { SvelteSet } from "svelte/reactivity";
   import Search from "$lib/components/Search.svelte";
   import TeamInfo from "$lib/components/TeamInfo.svelte";
   import { PUBLIC_API_URL } from "$env/static/public";
   import { onMount } from "svelte";
+  import { GameTypes } from "$lib/components/Utils.svelte";
 
   /* Manage player information. */
+  /* I was going to treat the data as sets, but sets are not in JSON really. */
   let players: Player[] = $state([]);
-  let playingTeams: SvelteSet<PlayerSet> = $state(new SvelteSet());
-  let playerOptions: SvelteSet<Player> = $state(new SvelteSet());
+  let playingTeams: PlayerSet[] = $state([]);
+  let playerOptions: Player[] = $state([]);
   let selectedTeam: PlayerSet | undefined = $state();
   let playerCount: number = $state(0);
 
   /* Manage game type and search. */
   let searchTerm: string = $state("");
-  let gameType: GameType = $state({
-    maxPlayerSets: 2,
-    playerSetsToMoveOn: 1,
-    playersOnATeam: 1,
-  });
+  let gameType: string = $state("SMASH_ULTIMATE_SINGLES");
 
   onMount(() => {
     /* Fetch players */
@@ -27,7 +24,7 @@
     };
     fetch(`${PUBLIC_API_URL}/player`, Players_INIT)
       .then((response) => response.json())
-      .then((data) => {
+      .then((data: Player[]) => {
         players = data;
         return true;
       })
@@ -38,12 +35,27 @@
 
     /* Get game type */
     const urlParams = new URL(window.location.href).searchParams;
-    gameType = {
-      maxPlayerSets: parseInt(urlParams.get("max") || "2"),
-      playerSetsToMoveOn: parseInt(urlParams.get("move") || "1"),
-      playersOnATeam: parseInt(urlParams.get("team") || "1"),
-    };
+    gameType = urlParams.get("mode") || "SMASH_ULTIMATE_SINGLES";
+
+    /* Check for cookies */
+    const data = document.cookie.split("; ");
+    const info = data.findIndex((text) => {
+      return text.substring(0, 4) === "info";
+    });
+    if (info !== -1) {
+      ({ playingTeams, playerCount } = JSON.parse(data[info].split("=")[1]));
+    }
   });
+
+  /**
+   * This function takes the current playingTeams set and turns it into
+   * a string. Then saves it as a cookie.
+   */
+  const saveTeams = () => {
+    // This cookie only lasts for a day
+    const expires = new Date(Date.now() + 86400000).toUTCString();
+    document.cookie = `info={"playingTeams": ${JSON.stringify(playingTeams)}, "playerCount": ${playerCount}}; expires=${expires}; path=/`;
+  };
 
   /**
    * Searches through all of the players. Picks the first four players
@@ -54,21 +66,17 @@
   const searchPlayers = () => {
     let found = 0;
     let index = 0;
-    playerOptions = new SvelteSet();
+    playerOptions = [];
     while (searchTerm !== "" && index < players.length && found < 4) {
-      // Checks if the player is already playing.
-      let alreadyPlaying = false;
-      playingTeams.forEach((team) => {
-        if (!alreadyPlaying) alreadyPlaying = team.players.has(players[index]);
-      });
-
       // Adds the player to the list if they are not already playing, exist, and there are
       // less than 4 results
       if (
         players[index].name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !alreadyPlaying
+        playingTeams.find(({ players }) =>
+          players.find((player) => player === players[index]),
+        ) === undefined
       ) {
-        playerOptions.add(players[index]);
+        playerOptions.push(players[index]);
         found++;
       }
       index++;
@@ -80,19 +88,23 @@
    * @param player The player being added.
    */
   const addPlayer = (player: Player) => {
-    if (selectedTeam === undefined || gameType.playersOnATeam === 1) {
+    if (
+      selectedTeam === undefined ||
+      GameTypes[gameType].playersOnATeam === 1
+    ) {
       selectedTeam = {
         id: "",
         name: "New Team",
-        players: new SvelteSet([player]),
+        players: [player],
       };
 
-      playingTeams.add(selectedTeam);
+      playingTeams.push(selectedTeam);
     } else {
-      selectedTeam.players.add(player);
+      selectedTeam.players.push(player);
       selectedTeam = undefined;
     }
     playerCount++;
+    saveTeams();
   };
 
   /**
@@ -101,9 +113,9 @@
    */
   const createPlayer = () => {
     const newPlayer = {
-      id: "",
+      id: `id-${Math.random() * 1000}`,
       name: searchTerm,
-      elo: new Map<GameType, number>(),
+      eloMap: {},
     };
     const player_INIT: RequestInit = {
       method: "POST",
@@ -131,7 +143,7 @@
         <button
           onclick={() => {
             addPlayer(option);
-            playerOptions = new SvelteSet();
+            playerOptions = [];
             searchTerm = "";
           }}
         >
@@ -141,25 +153,27 @@
     </Search>
     <div id="playing">
       <!--This is hella slow should be optimized.-->
-      {#each Array.from(playingTeams).reverse() as team}
+      {#each Array.from(playingTeams).reverse() as team, index}
         <TeamInfo
           {team}
           {gameType}
+          editable={true}
           add={() => {
             document.getElementById("search")?.focus();
             selectedTeam = team;
           }}
           remove={() => {
-            playingTeams.delete(team);
+            playingTeams.splice(index, 1);
           }}
           removePlayer={() => {
             playerCount--;
+            saveTeams();
           }}
         />
       {/each}
     </div>
     <button>
-      Start Tournament: {playerCount} player{playerCount > 1 ? "s" : ""}
+      Start Tournament: {playerCount} player{playerCount === 1 ? "" : "s"}
     </button>
   </div>
 </div>
@@ -169,9 +183,8 @@
     display: flex;
     flex-wrap: wrap;
     flex-direction: row-reverse;
-    width: calc(100vw - 2rem);
+    width: 100vw;
     justify-content: space-around;
-    padding: 1rem;
   }
 
   #players {
@@ -180,7 +193,7 @@
     flex-grow: 1;
     justify-content: space-between;
     max-width: 40rem;
-    height: calc(100vh - 2rem);
+    height: 100vh;
   }
 
   #playing {

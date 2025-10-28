@@ -48,7 +48,7 @@
                             </div>
                         {/each}
                     </div>
-                    <a href={`setup?mode=${game.name}`}>New Tournament</a>
+                    <a href={`selectgame`}>New Tournament</a>
                 </div>
                 <div class="stats">
                     {#each stats as stat}

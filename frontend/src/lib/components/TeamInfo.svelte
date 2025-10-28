@@ -1,17 +1,21 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import PlayerInfo from "./PlayerInfo.svelte";
+  import { GameTypes } from "./Utils.svelte";
+  import EditableText from "./EditableText.svelte";
 
   let {
     team,
     gameType,
+    editable,
     add,
     remove,
     removePlayer,
     children,
   }: {
     team: PlayerSet;
-    gameType: GameType;
+    gameType: string;
+    editable?: boolean;
     add?: () => void;
     remove?: (team: PlayerSet) => void;
     removePlayer?: (player: Player) => void;
@@ -19,32 +23,43 @@
   } = $props();
 </script>
 
-<div class={gameType.playersOnATeam > 1 ? "team" : ""}>
-  {#if gameType.playersOnATeam > 1}
-    <label
-      >Team Name: <input
-        class="teamName"
-        value={team.name}
-        type="text"
-      /></label
-    >
+<div class={GameTypes[gameType].playersOnATeam > 1 ? "team" : ""}>
+  {#if GameTypes[gameType].playersOnATeam > 1}
+    {#if editable}
+      <EditableText
+        label="Team Name: "
+        placeholder={team.name}
+        onSave={(text) => {
+          team.name = text;
+        }}
+      />
+    {:else}
+      <label
+        >Team Name: <input
+          class="teamName"
+          placeholder={team.name}
+          type="text"
+        /></label
+      >
+    {/if}
   {/if}
-  {#each team.players as player}
+  {#each team.players as player, index}
     <PlayerInfo
       {player}
       {gameType}
+      {editable}
       remove={remove !== undefined
         ? (player) => {
-            team.players.delete(player);
+            team.players.splice(index, 1);
             if (removePlayer) removePlayer(player);
-            if (team.players.size === 0) remove(team);
+            if (team.players.length === 0) remove(team);
           }
         : undefined}
     >
       {@render children?.()}</PlayerInfo
     >
   {/each}
-  {#if team.players.size < gameType.playersOnATeam}
+  {#if team.players.length < GameTypes[gameType].playersOnATeam}
     <button
       class="teamAdd"
       aria-label="add player to a team"
