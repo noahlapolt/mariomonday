@@ -2,10 +2,12 @@
   import type { Snippet } from "svelte";
   import PlayerInfo from "./PlayerInfo.svelte";
   import { GameTypes } from "./Utils.svelte";
+  import EditableText from "./EditableText.svelte";
 
   let {
     team,
     gameType,
+    editable,
     add,
     remove,
     removePlayer,
@@ -13,6 +15,7 @@
   }: {
     team: PlayerSet;
     gameType: string;
+    editable?: boolean;
     add?: () => void;
     remove?: (team: PlayerSet) => void;
     removePlayer?: (player: Player) => void;
@@ -22,18 +25,29 @@
 
 <div class={GameTypes[gameType].playersOnATeam > 1 ? "team" : ""}>
   {#if GameTypes[gameType].playersOnATeam > 1}
-    <label
-      >Team Name: <input
-        class="teamName"
-        value={team.name}
-        type="text"
-      /></label
-    >
+    {#if editable}
+      <EditableText
+        label="Team Name: "
+        placeholder={team.name}
+        onSave={(text) => {
+          team.name = text;
+        }}
+      />
+    {:else}
+      <label
+        >Team Name: <input
+          class="teamName"
+          placeholder={team.name}
+          type="text"
+        /></label
+      >
+    {/if}
   {/if}
   {#each team.players as player, index}
     <PlayerInfo
       {player}
       {gameType}
+      {editable}
       remove={remove !== undefined
         ? (player) => {
             team.players.splice(index, 1);

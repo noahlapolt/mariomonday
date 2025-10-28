@@ -38,8 +38,13 @@
     gameType = urlParams.get("mode") || "SMASH_ULTIMATE_SINGLES";
 
     /* Check for cookies */
-    const cookie = document.cookie.split("=");
-    if (cookie.length > 1) playingTeams = JSON.parse(cookie[1]);
+    const data = document.cookie.split("; ");
+    const info = data.findIndex((text) => {
+      return text.substring(0, 4) === "info";
+    });
+    if (info !== -1) {
+      ({ playingTeams, playerCount } = JSON.parse(data[info].split("=")[1]));
+    }
   });
 
   /**
@@ -49,7 +54,7 @@
   const saveTeams = () => {
     // This cookie only lasts for a day
     const expires = new Date(Date.now() + 86400000).toUTCString();
-    document.cookie = `playingTeams=${JSON.stringify(playingTeams)}; expires=${expires}; path=/`;
+    document.cookie = `info={"playingTeams": ${JSON.stringify(playingTeams)}, "playerCount": ${playerCount}}; expires=${expires}; path=/`;
   };
 
   /**
@@ -152,6 +157,7 @@
         <TeamInfo
           {team}
           {gameType}
+          editable={true}
           add={() => {
             document.getElementById("search")?.focus();
             selectedTeam = team;
@@ -177,9 +183,8 @@
     display: flex;
     flex-wrap: wrap;
     flex-direction: row-reverse;
-    width: calc(100vw - 2rem);
+    width: 100vw;
     justify-content: space-around;
-    padding: 1rem;
   }
 
   #players {
@@ -188,7 +193,7 @@
     flex-grow: 1;
     justify-content: space-between;
     max-width: 40rem;
-    height: calc(100vh - 2rem);
+    height: 100vh;
   }
 
   #playing {

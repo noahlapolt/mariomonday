@@ -1,22 +1,54 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import EditableText from "./EditableText.svelte";
+  import { PUBLIC_API_URL } from "$env/static/public";
 
   let {
     player,
     gameType,
+    editable,
     remove,
     children,
   }: {
     player: Player;
     gameType?: string;
+    editable?: boolean;
     remove?: (player: Player) => void;
     children?: Snippet;
   } = $props();
 </script>
 
 <div class="player">
-  <div>
-    {player.name}
+  <div class="info">
+    {#if editable}
+      <EditableText
+        label="Name"
+        placeholder={player.name}
+        onSave={(text) => {
+          const player_INIT: RequestInit = {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: player.id,
+              name: text,
+              elo: player.eloMap,
+            }),
+          };
+          fetch(`${PUBLIC_API_URL}/player/${player.id}`, player_INIT)
+            .then(() => {
+              return true;
+            })
+            .catch((err) => {
+              console.log("Failed to create the player" + err);
+              return false;
+            });
+        }}
+      />
+    {:else}
+      {player.name}
+    {/if}
     {#if gameType !== undefined}
       Elo: {player.eloMap[gameType]}
     {/if}
@@ -52,5 +84,11 @@
     margin: 0.25rem 0.5rem;
     border-radius: 0.5rem;
     padding: 0 0.5rem;
+  }
+
+  .info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 </style>
