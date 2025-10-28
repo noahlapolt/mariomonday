@@ -3,7 +3,7 @@
   import TeamInfo from "$lib/components/TeamInfo.svelte";
   import { PUBLIC_API_URL } from "$env/static/public";
   import { onMount } from "svelte";
-  import { GameTypes } from "$lib/components/Utils.svelte";
+  import { GameTypes, globalStates } from "$lib/components/Utils.svelte";
 
   /* Manage player information. */
   /* I was going to treat the data as sets, but sets are not in JSON really. */
@@ -124,15 +124,12 @@
       },
       body: JSON.stringify(newPlayer),
     };
-    fetch(`${PUBLIC_API_URL}/player`, player_INIT)
-      .then(() => {
+    fetch(`${PUBLIC_API_URL}/player`, player_INIT).then((response) => {
+      if (response.status === 200) {
         addPlayer(newPlayer);
         searchTerm = "";
-      })
-      .catch((err) => {
-        console.log("Failed to create the player" + err);
-        return false;
-      });
+      } else if (response.status === 403) globalStates.login = true;
+    });
   };
 </script>
 
