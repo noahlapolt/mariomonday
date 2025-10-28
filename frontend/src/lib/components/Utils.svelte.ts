@@ -21,3 +21,7 @@ export const GameTypes: Record<string, GameType> = {
         playersOnATeam: 2,
     },
 };
+
+export const globalStates = $state({
+    login: false,
+});

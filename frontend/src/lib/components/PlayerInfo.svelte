@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import EditableText from "./EditableText.svelte";
   import { PUBLIC_API_URL } from "$env/static/public";
+  import { globalStates } from "./Utils.svelte";
 
   let {
     player,
@@ -36,14 +37,11 @@
               elo: player.eloMap,
             }),
           };
-          fetch(`${PUBLIC_API_URL}/player/${player.id}`, player_INIT)
-            .then(() => {
-              return true;
-            })
-            .catch((err) => {
-              console.log("Failed to create the player" + err);
-              return false;
-            });
+          fetch(`${PUBLIC_API_URL}/player/${player.id}`, player_INIT).then(
+            (response) => {
+              if (response.status === 403) globalStates.login = true;
+            },
+          );
         }}
       />
     {:else}
