@@ -9,10 +9,20 @@
 
 a {
   text-decoration: none;
-  background-color: white;
   text-align: center;
-  color: black;
-  padding: 0.2rem;
+  background-color: var(--second);
+  border-radius: 0.5rem;
+  border: none;
+  padding: 0.5rem;
+  margin: 0.15rem;
+  display: flex;
+  color: var(--text-prime);
+  justify-content: center;
+}
+
+a:hover {
+  background-color: var(--hover);
+  color: var(--text-hover);
 }
 
 button {

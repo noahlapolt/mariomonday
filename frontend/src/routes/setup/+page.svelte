@@ -149,7 +149,7 @@
       {/each}
     </Search>
     <div id="playing">
-      <!--This is hella slow should be optimized.-->
+      <!--This is hella slow should be optimized. Sveltes weird array does not let reverse work-->
       {#each Array.from(playingTeams).reverse() as team, index}
         <TeamInfo
           {team}

@@ -1,6 +1,5 @@
 <!--
-    The landing screen is meant to show the next closest game and it's stats on mobile or two different games
-    and stats on desktop.
+    The landing screen will show information about Mario Monday and the last tourn with it's stats.
 -->
 
 <script lang="ts">
@@ -21,8 +20,7 @@
             alt: "of the kart logo.",
         },
     };
-    let desktop = $state(false); //TODO calculate this value based on the width of the screen.
-    let nextGame = $state(games.smash); //TODO figure out how to calculate this value.
+    let lastGame = $state(games.smash); //TODO figure out how to calculate this value.
     let stats = [
         { name: "Reed", win: 4, loss: 100 },
         { name: "Zach", win: 3, loss: 100 },
@@ -32,80 +30,72 @@
 </script>
 
 <div id="landing">
-    {#each [games.smash, games.kart] as game}
-        {#if nextGame.name === game.name || desktop}
-            <div class="background" style={game.style}>
-                <div class="startScreen">
-                    <img src={game.img} alt={game.alt} />
-                    <div class="leaderBoard">
-                        {#each [1, 0, 2] as top}
-                            <div
-                                class="leader"
-                                style={`height: ${["75%", "50%", "25%"][top]};`}
-                            >
-                                {top + 1}
-                                <p class="user">{stats[top].name}</p>
-                            </div>
-                        {/each}
-                    </div>
-                    <a href={`selectgame`}>New Tournament</a>
+    <div class="contents">
+        <h1>Welcome to the Mario Monday Stats Site!</h1>
+        <h2>What?</h2>
+        <p>
+            First you might be thinking: "What is Mario Monday?" Well Mario
+            Monday is an event at The Avenue Bar and Grill that happens each
+            Monday at 8:30pm. At this event we will play either Mario Kart or
+            Super Smash Ultimate. Sometimes it will be a different game if that
+            is what the people want.
+        </p>
+        <h2>Where?</h2>
+        <p>
+            Did you read the paragraph before? Its at The Avenue Bar and Grill
+            (1249 Commonwealth Ave, Allston, MA 02134)
+        </p>
+        <h2>When?</h2>
+        <p>
+            Seriously, did you read the first paragraph? Its every Monday at
+            8:30pm
+        </p>
+    </div>
+    <div id="leaderBoard" class="contents">
+        <img src={lastGame.img} alt={lastGame.alt} />
+        <div class="leaderBoard">
+            {#each [1, 0, 2] as top}
+                <div
+                    class="leader"
+                    style={`height: ${["75%", "50%", "25%"][top]};`}
+                >
+                    {top + 1}
+                    <p class="user">{stats[top].name}</p>
                 </div>
-                <div class="stats">
-                    {#each stats as stat}
-                        <div class="stat">
-                            <span>Player: {stat.name}</span>
-                            <span>
-                                {stat.win > 1 ? "Wins" : "Win"}: {stat.win}
-                            </span>
-                            <span>
-                                {stat.loss > 1 ? "Losses" : "Loss"}: {stat.loss}
-                            </span>
-                            <span>Ratio: {stat.win / stat.loss}</span>
-                        </div>
-                    {/each}
-                </div>
-            </div>
-        {/if}
-    {/each}
+            {/each}
+        </div>
+        <a href={`selectgame`}>New Tournament</a>
+    </div>
 </div>
 
 <style>
     #landing {
         display: flex;
         flex-wrap: wrap;
-        width: 100vw;
+        width: calc(100vw - 2rem);
+        padding: 1rem;
+        justify-content: center;
+        background-color: var(--prime);
+        color: var(--text-prime);
     }
 
-    .background {
-        padding: 0rem 2rem;
-        flex-grow: 1;
+    #leaderBoard {
+        justify-content: space-between;
     }
 
-    .startScreen {
-        display: grid;
-        grid-template-rows: 20vh 60vh 1.5rem;
-        grid-template-columns: 1fr;
-        height: 100vh;
-        gap: 1rem;
+    #leaderBoard img {
+        max-height: 30%;
+        object-fit: contain;
     }
 
-    .startScreen > img {
-        height: 100%;
-        justify-self: center;
-    }
-
-    .stats {
+    .contents {
         display: flex;
         flex-direction: column;
-    }
-
-    .stat {
-        display: flex;
-        justify-content: space-around;
-        padding: 0.5rem 0;
-        margin: 0.5rem 0;
-        width: 100%;
-        background-color: #999999;
+        flex-grow: 1;
+        height: calc(100vh - 2rem);
+        text-align: center;
+        min-width: 50%;
+        max-width: 20rem;
     }
 
     .leaderBoard {
@@ -113,6 +103,8 @@
         justify-content: center;
         align-items: end;
         gap: 1rem;
+        flex-grow: 1;
+        max-height: 40%;
     }
 
     .leader {
