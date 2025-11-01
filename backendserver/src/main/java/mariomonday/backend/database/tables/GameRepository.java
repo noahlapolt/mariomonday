@@ -7,5 +7,4 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 /**
  * Table for games
  */
-public interface GameRepository extends MongoRepository<Game, String> {
-}
+public interface GameRepository extends MongoRepository<Game, String> {}

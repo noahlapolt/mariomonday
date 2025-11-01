@@ -22,7 +22,6 @@ public class GameSet {
   @Id
   private final String id;
 
-  @NonNull
   private final Integer roundIndex;
 
   /**
@@ -49,7 +48,6 @@ public class GameSet {
   /**
    * The game type of this set
    */
-  @NonNull
   private GameType gameType;
 
   @DocumentReference(lazy = true)

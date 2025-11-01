@@ -65,9 +65,9 @@ public class Bracket {
 
   public GameSet getFinalGameSet() {
     return gameSets
-        .stream()
-        .filter(gs -> gs.getRoundIndex() == 0)
-        .findFirst()
-        .orElse(null);
+      .stream()
+      .filter(gs -> gs.getRoundIndex() == 0)
+      .findFirst()
+      .orElse(null);
   }
 }
