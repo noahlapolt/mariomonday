@@ -35,8 +35,7 @@ public abstract class AbstractEloManager {
    * @param gameType The type of game being played
    * @return Map from player to the ELO to add to that player's score.
    */
-  public Map<PlayerSet, Integer> calculateEloChange(
-      List<List<PlayerSet>> gameResults, GameType gameType) {
+  public Map<PlayerSet, Integer> calculateEloChange(List<List<PlayerSet>> gameResults, GameType gameType) {
     if (gameResults.isEmpty()) {
       throw new IllegalArgumentException("Must have at least one game");
     }
@@ -48,12 +47,20 @@ public abstract class AbstractEloManager {
 
     var playerToScore = calculateActualScores(gameResults, gameType.getPlayerSetsToMoveOn());
     var playerToExpectedScore = calculateAllExpectedScores(players, gameResults.size(), gameType);
-    return players.stream().collect(
-        Collectors.toMap(player -> player,
-            player -> (int) Math.round((K_FACTOR * (playerToScore.get(player) - playerToExpectedScore.get(player))))));
+    return players
+      .stream()
+      .collect(
+        Collectors.toMap(
+          player -> player,
+          player -> (int) Math.round((K_FACTOR * (playerToScore.get(player) - playerToExpectedScore.get(player))))
+        )
+      );
   }
 
-  protected abstract Map<PlayerSet, Double> calculateActualScores(List<List<PlayerSet>> gameResults, int winnersPerGame);
+  protected abstract Map<PlayerSet, Double> calculateActualScores(
+    List<List<PlayerSet>> gameResults,
+    int winnersPerGame
+  );
 
   /**
    * Calculates the expected scores for all players in a set.
@@ -67,17 +74,29 @@ public abstract class AbstractEloManager {
     var playerToExpectedScore = new HashMap<PlayerSet, Double>();
     for (var player : players) {
       playerToExpectedScore.put(player, 0.0);
-      var playerSetElo = player.getPlayers().stream()
-          .mapToInt(p -> p.getEloMap().get(gameType)).sum();
+      var playerSetElo = player
+        .getPlayers()
+        .stream()
+        .mapToInt(p -> p.getEloMap().get(gameType))
+        .sum();
       for (var competitor : players) {
         if (player.equals(competitor)) {
           continue;
         }
-        var competitorElo = competitor.getPlayers().stream()
-            .mapToInt(p -> p.getEloMap().get(gameType)).sum();
-        playerToExpectedScore.put(player, playerToExpectedScore.get(player) + calculateExpectedScore(playerSetElo, competitorElo));
+        var competitorElo = competitor
+          .getPlayers()
+          .stream()
+          .mapToInt(p -> p.getEloMap().get(gameType))
+          .sum();
+        playerToExpectedScore.put(
+          player,
+          playerToExpectedScore.get(player) + calculateExpectedScore(playerSetElo, competitorElo)
+        );
       }
-      playerToExpectedScore.put(player, gameCount * playerToExpectedScore.get(player) / (playerCount * (playerCount - 1) / 2));
+      playerToExpectedScore.put(
+        player,
+        (gameCount * playerToExpectedScore.get(player)) / ((playerCount * (playerCount - 1)) / 2)
+      );
     }
     return playerToExpectedScore;
   }

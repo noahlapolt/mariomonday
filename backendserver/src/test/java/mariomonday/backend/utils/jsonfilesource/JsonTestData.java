@@ -1,10 +1,9 @@
 package mariomonday.backend.utils.jsonfilesource;
 
-import org.junit.jupiter.params.provider.Arguments;
-
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
+import org.junit.jupiter.params.provider.Arguments;
 
 @Value
 @NonFinal

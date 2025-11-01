@@ -8,18 +8,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import mariomonday.backend.database.schema.GameType;
-import mariomonday.backend.database.schema.PlayerSet;
-import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreator.GameOrPlayerSet;
-import mariomonday.backend.utils.TestDataUtil;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,14 +18,25 @@ import lombok.extern.jackson.Jacksonized;
 import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
+import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.PlayerSet;
+import mariomonday.backend.database.schema.PlayerSet;
+import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreator.GameOrPlayerSet;
 import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreator.GameOrPlayerSet;
 import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreatorTest.PlayerSetsTestData.Inputs;
 import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreatorTest.PlayerSetsTestData.TestGame;
 import mariomonday.backend.managers.utils.BracketPrettyPrinter;
 import mariomonday.backend.utils.TestDataUtil;
+import mariomonday.backend.utils.TestDataUtil;
 import mariomonday.backend.utils.jsonfilesource.JsonFileSource;
 import mariomonday.backend.utils.jsonfilesource.JsonTestData;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class MaxSetsStrategyCreatorTest {

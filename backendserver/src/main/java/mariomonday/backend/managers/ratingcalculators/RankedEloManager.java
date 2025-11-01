@@ -10,9 +10,9 @@ import mariomonday.backend.database.schema.PlayerSet;
  * In Mario Kart, first will get more points than second even though they both won.
  */
 public class RankedEloManager extends AbstractEloManager {
+
   @Override
-  public Map<PlayerSet, Double> calculateActualScores(List<List<PlayerSet>> gameResults,
-      int winnersPerGame) {
+  public Map<PlayerSet, Double> calculateActualScores(List<List<PlayerSet>> gameResults, int winnersPerGame) {
     var playerCount = gameResults.get(0).size();
     var playerToScore = new HashMap<PlayerSet, Double>();
     for (var game : gameResults) {
@@ -22,8 +22,7 @@ public class RankedEloManager extends AbstractEloManager {
           playerToScore.put(player, 0.0);
         }
         double wins = (playerCount - i - 1);
-        playerToScore.put(player, playerToScore.get(player)
-            + wins / (playerCount * (playerCount - 1) / 2));
+        playerToScore.put(player, playerToScore.get(player) + wins / ((playerCount * (playerCount - 1)) / 2));
       }
     }
     return playerToScore;

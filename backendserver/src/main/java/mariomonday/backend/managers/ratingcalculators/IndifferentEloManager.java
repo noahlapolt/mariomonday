@@ -13,8 +13,7 @@ import mariomonday.backend.database.schema.PlayerSet;
 public class IndifferentEloManager extends AbstractEloManager {
 
   @Override
-  public Map<PlayerSet, Double> calculateActualScores(List<List<PlayerSet>> gameResults,
-      int winnersPerGame) {
+  public Map<PlayerSet, Double> calculateActualScores(List<List<PlayerSet>> gameResults, int winnersPerGame) {
     var playerCount = gameResults.get(0).size();
     var playerToScore = new HashMap<PlayerSet, Double>();
     var loserCount = playerCount - winnersPerGame;
@@ -33,8 +32,7 @@ public class IndifferentEloManager extends AbstractEloManager {
           // If you lost, you get 0.5 points for each other loser
           scoreToAdd = 0.5 * (loserCount - 1);
         }
-        playerToScore.put(player, playerToScore.get(player)
-            + scoreToAdd / (playerCount * (playerCount - 1) / 2));
+        playerToScore.put(player, playerToScore.get(player) + scoreToAdd / ((playerCount * (playerCount - 1)) / 2));
       }
     }
     return playerToScore;

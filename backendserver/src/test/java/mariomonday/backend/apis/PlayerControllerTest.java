@@ -36,8 +36,10 @@ public class PlayerControllerTest {
     var testPlayer3 = Player.builder().name("Noah").eloMap(generateDefaultEloMap()).build();
     var testPlayer4 = Player.builder().name("Jack").eloMap(generateDefaultEloMap()).build();
     playerRepository.saveAll(List.of(testPlayer1, testPlayer2, testPlayer3, testPlayer4));
-    playerNameToPlayer = playerRepository.findAll().stream().collect(Collectors.toMap(Player::getName,
-        Function.identity()));
+    playerNameToPlayer = playerRepository
+      .findAll()
+      .stream()
+      .collect(Collectors.toMap(Player::getName, Function.identity()));
   }
 
   @AfterEach
@@ -67,8 +69,7 @@ public class PlayerControllerTest {
   @Test
   public void testGetPlayer_shouldThrow_whenPlayerDoesNotExist() {
     // Act & Verify
-    Assertions.assertThrows(NotFoundException.class,
-        () -> playerController.getPlayer(" Aahah h Im evil fucker"));
+    Assertions.assertThrows(NotFoundException.class, () -> playerController.getPlayer(" Aahah h Im evil fucker"));
   }
 
   @Test
@@ -80,7 +81,7 @@ public class PlayerControllerTest {
     var dbPlayer = playerRepository.findById(addedPlayer.getId()).get();
     Assertions.assertEquals(dbPlayer, addedPlayer);
     Assertions.assertEquals(dbPlayer.getName(), "New guy in town");
-    for(var gameType : GameType.values()) {
+    for (var gameType : GameType.values()) {
       Assertions.assertEquals(dbPlayer.getEloMap().get(gameType), Player.STARTING_ELO);
     }
   }
@@ -88,29 +89,31 @@ public class PlayerControllerTest {
   @Test
   public void testPostPlayer_shouldThrow_whenNullPlayerName() {
     // Act & Verify
-    Assertions.assertThrows(InvalidRequestException.class,
-        () -> playerController.postPlayer(Player.builder().build()));
+    Assertions.assertThrows(InvalidRequestException.class, () -> playerController.postPlayer(Player.builder().build()));
   }
 
   @Test
   public void testPostPlayer_shouldThrow_whenEmptyPlayerName() {
     // Act & Verify
-    Assertions.assertThrows(InvalidRequestException.class,
-        () -> playerController.postPlayer(Player.builder().name("").build()));
+    Assertions.assertThrows(InvalidRequestException.class, () ->
+      playerController.postPlayer(Player.builder().name("").build())
+    );
   }
 
   @Test
   public void testPostPlayer_shouldThrow_whenIdProvided() {
     // Act & Verify
-    Assertions.assertThrows(InvalidRequestException.class,
-        () -> playerController.postPlayer(Player.builder().name("evil").id("six seven AHHHHHHH").build()));
+    Assertions.assertThrows(InvalidRequestException.class, () ->
+      playerController.postPlayer(Player.builder().name("evil").id("six seven AHHHHHHH").build())
+    );
   }
 
   @Test
   public void testPostPlayer_shouldThrow_whenPlayerAlreadyExists() {
     // Act & Verify
-    Assertions.assertThrows(AlreadyExistsException.class,
-        () -> playerController.postPlayer(Player.builder().name("Reed").build()));
+    Assertions.assertThrows(AlreadyExistsException.class, () ->
+      playerController.postPlayer(Player.builder().name("Reed").build())
+    );
   }
 
   @Test
@@ -125,7 +128,7 @@ public class PlayerControllerTest {
     // Verify
     var dbReed = playerRepository.findById(currentReed.getId()).get();
     Assertions.assertEquals(dbReed.getName(), "Reed Prime");
-    for(var gameType : GameType.values()) {
+    for (var gameType : GameType.values()) {
       Assertions.assertEquals(dbReed.getEloMap().get(gameType), Player.STARTING_ELO);
     }
   }
@@ -144,7 +147,7 @@ public class PlayerControllerTest {
     var dbReed = playerRepository.findById(currentReed.getId()).get();
     Assertions.assertEquals(dbReed.getName(), "Reed Prime");
     // Elo should be unchanged
-    for(var gameType : GameType.values()) {
+    for (var gameType : GameType.values()) {
       Assertions.assertEquals(dbReed.getEloMap().get(gameType), Player.STARTING_ELO);
     }
   }
@@ -155,8 +158,9 @@ public class PlayerControllerTest {
     var currentReed = playerNameToPlayer.get("Reed");
 
     // Act & Verify
-    Assertions.assertThrows(InvalidRequestException.class,
-        () -> playerController.patchPlayer(currentReed.getId(), Player.builder().build()));
+    Assertions.assertThrows(InvalidRequestException.class, () ->
+      playerController.patchPlayer(currentReed.getId(), Player.builder().build())
+    );
   }
 
   @Test
@@ -165,8 +169,9 @@ public class PlayerControllerTest {
     var currentReed = playerNameToPlayer.get("Reed");
 
     // Act & Verify
-    Assertions.assertThrows(InvalidRequestException.class,
-        () -> playerController.patchPlayer(currentReed.getId(), Player.builder().name("").build()));
+    Assertions.assertThrows(InvalidRequestException.class, () ->
+      playerController.patchPlayer(currentReed.getId(), Player.builder().name("").build())
+    );
   }
 
   @Test
@@ -175,15 +180,17 @@ public class PlayerControllerTest {
     var currentReed = playerNameToPlayer.get("Reed");
 
     // Act & Verify
-    Assertions.assertThrows(AlreadyExistsException.class,
-        () -> playerController.patchPlayer(currentReed.getId(), Player.builder().name("Zach").build()));
+    Assertions.assertThrows(AlreadyExistsException.class, () ->
+      playerController.patchPlayer(currentReed.getId(), Player.builder().name("Zach").build())
+    );
   }
 
   @Test
   public void testPatchPlayer_shouldThrow_whenPlayerNotFound() {
     // Act & Verify
-    Assertions.assertThrows(NotFoundException.class,
-        () -> playerController.patchPlayer("Fake ID", Player.builder().name("Reed Prime").build()));
+    Assertions.assertThrows(NotFoundException.class, () ->
+      playerController.patchPlayer("Fake ID", Player.builder().name("Reed Prime").build())
+    );
   }
 
   @Test
@@ -197,20 +204,29 @@ public class PlayerControllerTest {
     // Verify
     var playerData = playerRepository.findAll();
     Assertions.assertEquals(playerData.size(), 3);
-    Assertions.assertTrue(playerData.containsAll(playerNameToPlayer.values().stream()
-        .filter(player -> !player.getName().equals("Reed")).toList()));
+    Assertions.assertTrue(
+      playerData.containsAll(
+        playerNameToPlayer
+          .values()
+          .stream()
+          .filter(player -> !player.getName().equals("Reed"))
+          .toList()
+      )
+    );
     Assertions.assertTrue(playerRepository.findById(reed.getId()).isEmpty());
   }
 
   @Test
   public void testDeletePlayer_shouldThrow_whenPlayerDoesNotExist() {
     // Act & Verify
-    Assertions.assertThrows(NotFoundException.class, () -> playerController.deletePlayer("Gonna play some silk song today :)"));
+    Assertions.assertThrows(NotFoundException.class, () ->
+      playerController.deletePlayer("Gonna play some silk song today :)")
+    );
   }
 
   private Map<GameType, Integer> generateDefaultEloMap() {
     var result = new HashMap<GameType, Integer>();
-    for(var gameType : GameType.values()) {
+    for (var gameType : GameType.values()) {
       result.put(gameType, Player.STARTING_ELO);
     }
     return result;

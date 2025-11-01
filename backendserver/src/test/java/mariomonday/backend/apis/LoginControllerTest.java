@@ -30,34 +30,43 @@ public class LoginControllerTest {
 
   @BeforeAll
   public void setUp() {
-    userDetailsManager.createUser(User.withUsername("freakyUser")
-        .password(passwordEncoder.encode("I like feet stuff")).roles("USER").build());
+    userDetailsManager.createUser(
+      User.withUsername("freakyUser").password(passwordEncoder.encode("I like feet stuff")).roles("USER").build()
+    );
   }
 
   @Test
   public void testLogin_shouldSucceed_whenUsernameAndPasswordCorrect() {
     // Act
     // No exception means we were able to log in!
-    loginController.login(LoginRequest.builder().username("freakyUser")
-            .password("I like feet stuff").build(),
-        new MockHttpServletRequest(), new MockHttpServletResponse());
+    loginController.login(
+      LoginRequest.builder().username("freakyUser").password("I like feet stuff").build(),
+      new MockHttpServletRequest(),
+      new MockHttpServletResponse()
+    );
   }
 
   @Test
   public void testLogin_shouldFail_whenPasswordWrong() {
     // Act
     Assertions.assertThrows(BadCredentialsException.class, () ->
-        loginController.login(LoginRequest.builder().username("freakyUser")
-            .password("Fuck you!").build(),
-        new MockHttpServletRequest(), new MockHttpServletResponse()));
+      loginController.login(
+        LoginRequest.builder().username("freakyUser").password("Fuck you!").build(),
+        new MockHttpServletRequest(),
+        new MockHttpServletResponse()
+      )
+    );
   }
 
   @Test
   public void testLogin_shouldFail_whenUserNotExist() {
     // Act
     Assertions.assertThrows(BadCredentialsException.class, () ->
-        loginController.login(LoginRequest.builder().username("normalUser")
-                .password("Fuck you!").build(),
-            new MockHttpServletRequest(), new MockHttpServletResponse()));
+      loginController.login(
+        LoginRequest.builder().username("normalUser").password("Fuck you!").build(),
+        new MockHttpServletRequest(),
+        new MockHttpServletResponse()
+      )
+    );
   }
 }

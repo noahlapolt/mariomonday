@@ -21,18 +21,20 @@ public class IndifferentEloManagerTest {
   @Test
   public void testSingleGame1v1WithSameElo() {
     // Setup
-    var player1 = PlayerSet.builder().player(Player.builder()
-        .name("Reed")
-        .eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build())
-        .build();
-    var player2 = PlayerSet.builder().player(Player.builder()
-            .name("Guy who sucks at smash")
-            .eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build())
-        .build();
+    var player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build())
+      .build();
+    var player2 = PlayerSet.builder()
+      .player(
+        Player.builder().name("Guy who sucks at smash").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build()
+      )
+      .build();
 
     // Act
-    var result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2)), GameType.SMASH_ULTIMATE_SINGLES);
+    var result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify
     Assertions.assertEquals(result.size(), 2);
@@ -43,19 +45,21 @@ public class IndifferentEloManagerTest {
   @Test
   public void testMultiGameSet1v1WithSameElo() {
     // Setup
-    var player1 = PlayerSet.builder().player(Player.builder()
-            .name("Reed")
-            .eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build())
-        .build();
-    var player2 = PlayerSet.builder().player(Player.builder()
-            .name("Guy who sucks at smash")
-            .eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build())
-        .build();
+    var player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build())
+      .build();
+    var player2 = PlayerSet.builder()
+      .player(
+        Player.builder().name("Guy who sucks at smash").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build()
+      )
+      .build();
 
     // Act
     // Player 1 wins 2-0
-    var result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2), List.of(player1, player2)), GameType.SMASH_ULTIMATE_SINGLES);
+    var result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2), List.of(player1, player2)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify
     Assertions.assertEquals(result.size(), 2);
@@ -64,8 +68,10 @@ public class IndifferentEloManagerTest {
 
     // Act 2
     // Player 1 wins 2-1
-    result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2), List.of(player2, player1), List.of(player1, player2)), GameType.SMASH_ULTIMATE_SINGLES);
+    result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2), List.of(player2, player1), List.of(player1, player2)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify 2
     Assertions.assertEquals(result.size(), 2);
@@ -74,8 +80,10 @@ public class IndifferentEloManagerTest {
 
     // Act 3
     // 1-1 tie
-    result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2), List.of(player2, player1)), GameType.SMASH_ULTIMATE_SINGLES);
+    result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2), List.of(player2, player1)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify 3
     Assertions.assertEquals(result.size(), 2);
@@ -86,18 +94,20 @@ public class IndifferentEloManagerTest {
   @Test
   public void testSingleGameSet1v1WithDifferentElo() {
     // Setup
-    var player1 = PlayerSet.builder().player(Player.builder()
-            .name("Reed")
-            .eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1600)).build())
-        .build();
-    var player2 = PlayerSet.builder().player(Player.builder()
-            .name("Guy who sucks at smash")
-            .eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1400)).build())
-        .build();
+    var player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1600)).build())
+      .build();
+    var player2 = PlayerSet.builder()
+      .player(
+        Player.builder().name("Guy who sucks at smash").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1400)).build()
+      )
+      .build();
 
     // Act
-    var result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2)), GameType.SMASH_ULTIMATE_SINGLES);
+    var result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify
     // Should have small winnings punching down
@@ -106,8 +116,10 @@ public class IndifferentEloManagerTest {
     Assertions.assertEquals(result.get(player2), -8);
 
     // Act 2
-    result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player2, player1)), GameType.SMASH_ULTIMATE_SINGLES);
+    result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player2, player1)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify 2
     // Big win punching up
@@ -119,19 +131,21 @@ public class IndifferentEloManagerTest {
   @Test
   public void testMultiGameSet1v1WithDifferentElo() {
     // Setup
-    var player1 = PlayerSet.builder().player(Player.builder()
-            .name("Reed")
-            .eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1600)).build())
-        .build();
-    var player2 = PlayerSet.builder().player(Player.builder()
-            .name("Guy who sucks at smash")
-            .eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1400)).build())
-        .build();
+    var player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1600)).build())
+      .build();
+    var player2 = PlayerSet.builder()
+      .player(
+        Player.builder().name("Guy who sucks at smash").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1400)).build()
+      )
+      .build();
 
     // Act
     // Player 1 wins 2-0
-    var result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2), List.of(player1, player2)), GameType.SMASH_ULTIMATE_SINGLES);
+    var result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2), List.of(player1, player2)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify
     Assertions.assertEquals(result.size(), 2);
@@ -143,8 +157,10 @@ public class IndifferentEloManagerTest {
 
     // Act 2
     // Player 1 wins 2-1
-    result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2), List.of(player2, player1), List.of(player1, player2)), GameType.SMASH_ULTIMATE_SINGLES);
+    result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2), List.of(player2, player1), List.of(player1, player2)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify 2
     // Pretty crazy, even though player 1 won the set they lost ELO cuz the skill gap is so large
@@ -154,8 +170,10 @@ public class IndifferentEloManagerTest {
 
     // Act 3
     // 1-1 tie
-    result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2), List.of(player2, player1)), GameType.SMASH_ULTIMATE_SINGLES);
+    result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2), List.of(player2, player1)),
+      GameType.SMASH_ULTIMATE_SINGLES
+    );
 
     // Verify 3
     // Same here, even in a tie player 1 loses big
@@ -167,26 +185,24 @@ public class IndifferentEloManagerTest {
   @Test
   public void testSingleGameSetFreeForAllWithSameElo() {
     // Setup
-    var player1 = PlayerSet.builder().player(Player.builder()
-            .name("Reed")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
-    var player2 = PlayerSet.builder().player(Player.builder()
-            .name("Jack")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
-    var player3 = PlayerSet.builder().player(Player.builder()
-            .name("Zach")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
-    var player4 = PlayerSet.builder().player(Player.builder()
-            .name("Noah")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
+    var player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
+    var player2 = PlayerSet.builder()
+      .player(Player.builder().name("Jack").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
+    var player3 = PlayerSet.builder()
+      .player(Player.builder().name("Zach").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
+    var player4 = PlayerSet.builder()
+      .player(Player.builder().name("Noah").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
 
     // Act
-    var result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2, player3, player4)), GameType.MARIO_KART_WORLD);
+    var result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2, player3, player4)),
+      GameType.MARIO_KART_WORLD
+    );
 
     // Verify
     Assertions.assertEquals(result.size(), 4);
@@ -199,27 +215,24 @@ public class IndifferentEloManagerTest {
   @Test
   public void testMultiGameSetFreeForAllWithSameElo() {
     // Setup
-    var player1 = PlayerSet.builder().player(Player.builder()
-            .name("Reed")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
-    var player2 = PlayerSet.builder().player(Player.builder()
-            .name("Jack")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
-    var player3 = PlayerSet.builder().player(Player.builder()
-            .name("Zach")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
-    var player4 = PlayerSet.builder().player(Player.builder()
-            .name("Noah")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
+    var player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
+    var player2 = PlayerSet.builder()
+      .player(Player.builder().name("Jack").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
+    var player3 = PlayerSet.builder()
+      .player(Player.builder().name("Zach").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
+    var player4 = PlayerSet.builder()
+      .player(Player.builder().name("Noah").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
 
     // Act
-    var result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2, player3, player4),
-            List.of(player4, player3, player2, player1)), GameType.MARIO_KART_WORLD);
+    var result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2, player3, player4), List.of(player4, player3, player2, player1)),
+      GameType.MARIO_KART_WORLD
+    );
 
     // Verify
     Assertions.assertEquals(result.size(), 4);
@@ -229,9 +242,10 @@ public class IndifferentEloManagerTest {
     Assertions.assertEquals(result.get(player4), 0);
 
     // Act 2
-    result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2, player3, player4),
-            List.of(player1, player4, player3, player2)), GameType.MARIO_KART_WORLD);
+    result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2, player3, player4), List.of(player1, player4, player3, player2)),
+      GameType.MARIO_KART_WORLD
+    );
 
     // Verify 2
     Assertions.assertEquals(result.size(), 4);
@@ -244,26 +258,24 @@ public class IndifferentEloManagerTest {
   @Test
   public void testSingleGameSetFreeForAllWithDifferentElo() {
     // Setup
-    var player1 = PlayerSet.builder().player(Player.builder()
-            .name("Reed")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1800)).build())
-        .build();
-    var player2 = PlayerSet.builder().player(Player.builder()
-            .name("Jack")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1600)).build())
-        .build();
-    var player3 = PlayerSet.builder().player(Player.builder()
-            .name("Zach")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1400)).build())
-        .build();
-    var player4 = PlayerSet.builder().player(Player.builder()
-            .name("Noah")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1200)).build())
-        .build();
+    var player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1800)).build())
+      .build();
+    var player2 = PlayerSet.builder()
+      .player(Player.builder().name("Jack").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1600)).build())
+      .build();
+    var player3 = PlayerSet.builder()
+      .player(Player.builder().name("Zach").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1400)).build())
+      .build();
+    var player4 = PlayerSet.builder()
+      .player(Player.builder().name("Noah").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1200)).build())
+      .build();
 
     // Act
-    var result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2, player3, player4)), GameType.MARIO_KART_WORLD);
+    var result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2, player3, player4)),
+      GameType.MARIO_KART_WORLD
+    );
 
     // Verify
     // Certain ELOs will straight up be impossible to get to (as seen here)
@@ -276,26 +288,24 @@ public class IndifferentEloManagerTest {
     Assertions.assertEquals(result.get(player4), 1);
 
     // Setup 2
-    player1 = PlayerSet.builder().player(Player.builder()
-            .name("Reed")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1600)).build())
-        .build();
-    player2 = PlayerSet.builder().player(Player.builder()
-            .name("Jack")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1550)).build())
-        .build();
-    player3 = PlayerSet.builder().player(Player.builder()
-            .name("Zach")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
-    player4 = PlayerSet.builder().player(Player.builder()
-            .name("Noah")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1450)).build())
-        .build();
+    player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1600)).build())
+      .build();
+    player2 = PlayerSet.builder()
+      .player(Player.builder().name("Jack").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1550)).build())
+      .build();
+    player3 = PlayerSet.builder()
+      .player(Player.builder().name("Zach").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
+    player4 = PlayerSet.builder()
+      .player(Player.builder().name("Noah").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1450)).build())
+      .build();
 
     // Act 2
-    result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2, player3, player4)), GameType.MARIO_KART_WORLD);
+    result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2, player3, player4)),
+      GameType.MARIO_KART_WORLD
+    );
 
     // Verify 2
     Assertions.assertEquals(result.size(), 4);
@@ -308,27 +318,24 @@ public class IndifferentEloManagerTest {
   @Test
   public void testMultiGameSetFreeForAllWithDifferentElo() {
     // Setup 2
-    var player1 = PlayerSet.builder().player(Player.builder()
-            .name("Reed")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1600)).build())
-        .build();
-    var player2 = PlayerSet.builder().player(Player.builder()
-            .name("Jack")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1550)).build())
-        .build();
-    var player3 = PlayerSet.builder().player(Player.builder()
-            .name("Zach")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
-        .build();
-    var player4 = PlayerSet.builder().player(Player.builder()
-            .name("Noah")
-            .eloMap(Map.of(GameType.MARIO_KART_WORLD, 1450)).build())
-        .build();
+    var player1 = PlayerSet.builder()
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1600)).build())
+      .build();
+    var player2 = PlayerSet.builder()
+      .player(Player.builder().name("Jack").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1550)).build())
+      .build();
+    var player3 = PlayerSet.builder()
+      .player(Player.builder().name("Zach").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1500)).build())
+      .build();
+    var player4 = PlayerSet.builder()
+      .player(Player.builder().name("Noah").eloMap(Map.of(GameType.MARIO_KART_WORLD, 1450)).build())
+      .build();
 
     // Act 2
-    var result = indifferentEloManager
-        .calculateEloChange(List.of(List.of(player1, player2, player3, player4),
-            List.of(player1, player4, player2, player3)), GameType.MARIO_KART_WORLD);
+    var result = indifferentEloManager.calculateEloChange(
+      List.of(List.of(player1, player2, player3, player4), List.of(player1, player4, player2, player3)),
+      GameType.MARIO_KART_WORLD
+    );
 
     // Verify 2
     Assertions.assertEquals(result.size(), 4);
