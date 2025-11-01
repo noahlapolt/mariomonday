@@ -1,11 +1,13 @@
 package mariomonday.backend.apis.schema;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
  * Request to log in
  */
 @Data
+@Builder
 public class LoginRequest {
 
   /**
