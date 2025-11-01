@@ -64,11 +64,15 @@ public class PlayerController {
   /**
    * Create a new player
    * @param newPlayer The new player to create. Does not need to include the ID
+   * @return The newly created player
    */
   @PostMapping("/player")
-  void postPlayer(@RequestBody Player newPlayer) {
+  Player postPlayer(@RequestBody Player newPlayer) {
     if (newPlayer.getName() == null || newPlayer.getName().isEmpty()) {
       throw new InvalidRequestException("Invalid player name");
+    }
+    if (newPlayer.getId() != null) {
+      throw new InvalidRequestException("ID should not be provided when creating a player");
     }
     try {
       // Set ELO to initial value for all games
@@ -77,7 +81,7 @@ public class PlayerController {
           Collectors.toMap(gameType -> gameType, gameType -> Player.STARTING_ELO)
         )
       );
-      playerRepo.save(newPlayer);
+      return playerRepo.save(newPlayer);
     } catch (DuplicateKeyException e) {
       throw new AlreadyExistsException("Given player name is already in use");
     }
@@ -87,9 +91,10 @@ public class PlayerController {
    * Update an existing player, currently only supports name changes
    * @param playerId The player ID of the player to update
    * @param player The new player information
+   * @return The updated player
    */
   @PatchMapping("/player/{playerId}")
-  void patchPlayer(@PathVariable String playerId, @RequestBody Player player) {
+  Player patchPlayer(@PathVariable String playerId, @RequestBody Player player) {
     if (player.getName() == null || player.getName().isEmpty()) {
       throw new InvalidRequestException("Invalid player name");
     }
@@ -101,6 +106,7 @@ public class PlayerController {
       if (result == null) {
         throw new NotFoundException("Player not found with id: " + playerId);
       }
+      return result;
     } catch (DuplicateKeyException e) {
       throw new AlreadyExistsException("Given player name is already in use");
     }
