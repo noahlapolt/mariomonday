@@ -1,11 +1,8 @@
 package mariomonday.backend.database.schema;
 
-import java.util.Arrays;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NonNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -33,7 +30,6 @@ public class Player {
    * Player name, must be unique
    */
   @Indexed(unique = true)
-  @NonNull
   private String name;
 
   private Map<GameType, Integer> eloMap;
