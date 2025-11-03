@@ -1,19 +1,19 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import PlayerInfo from "./PlayerInfo.svelte";
+  import PlayerRender from "./PlayerRender.svelte";
   import { GameTypes } from "./Utils.svelte";
   import EditableText from "./EditableText.svelte";
 
   let {
-    team,
+    playerSet,
     gameType,
-    editable,
+    editable = false,
     add,
     remove,
     removePlayer,
     children,
   }: {
-    team: PlayerSet;
+    playerSet: PlayerSet;
     gameType: string;
     editable?: boolean;
     add?: () => void;
@@ -25,41 +25,32 @@
 
 <div class={GameTypes[gameType].playersOnATeam > 1 ? "team" : ""}>
   {#if GameTypes[gameType].playersOnATeam > 1}
-    {#if editable}
-      <EditableText
-        label="Team Name: "
-        placeholder={team.name}
-        onSave={(text) => {
-          team.name = text;
-        }}
-      />
-    {:else}
-      <label
-        >Team Name: <input
-          class="teamName"
-          placeholder={team.name}
-          type="text"
-        /></label
-      >
-    {/if}
+    <EditableText
+      label="Team Name: "
+      placeholder={playerSet.name}
+      {editable}
+      onSave={(text) => {
+        playerSet.name = text;
+      }}
+    />
   {/if}
-  {#each team.players as player, index}
-    <PlayerInfo
+  {#each playerSet.players as player, index}
+    <PlayerRender
       {player}
       {gameType}
       {editable}
       remove={remove !== undefined
         ? (player) => {
-            team.players.splice(index, 1);
+            playerSet.players.splice(index, 1);
             if (removePlayer) removePlayer(player);
-            if (team.players.length === 0) remove(team);
+            if (playerSet.players.length === 0) remove(playerSet);
           }
         : undefined}
     >
-      {@render children?.()}</PlayerInfo
+      {@render children?.()}</PlayerRender
     >
   {/each}
-  {#if team.players.length < GameTypes[gameType].playersOnATeam}
+  {#if playerSet.players.length < GameTypes[gameType].playersOnATeam}
     <button
       class="teamAdd"
       aria-label="add player to a team"
@@ -84,20 +75,7 @@
     display: flex;
     flex-direction: column;
     text-align: center;
-    border: 1px dashed var(--second);
     border-radius: 0.5rem;
-    margin: 0.5rem;
-    padding: 0.5rem 0;
-  }
-
-  .teamName {
-    background-color: var(--prime);
-    color: var(--text-prime);
-    border: none;
-  }
-
-  .teamName:focus {
-    outline: 1px solid var(--second);
   }
 
   .teamAdd {

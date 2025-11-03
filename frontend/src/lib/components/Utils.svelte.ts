@@ -22,6 +22,7 @@ export const GameTypes: Record<string, GameType> = {
     },
 };
 
-export const globalStates = $state({
+export const globalStates: { login: boolean; revivePool: PlayerSet[] } = $state({
     login: false,
+    revivePool: []
 });

@@ -7,7 +7,7 @@
   let {
     player,
     gameType,
-    editable,
+    editable = false,
     remove,
     children,
   }: {
@@ -25,6 +25,7 @@
       <EditableText
         label="Name"
         placeholder={player.name}
+        {editable}
         onSave={(text) => {
           const player_INIT: RequestInit = {
             method: "PATCH",
@@ -78,9 +79,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 1px solid var(--second);
     margin: 0.25rem 0.5rem;
-    border-radius: 0.5rem;
     padding: 0 0.5rem;
   }
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import Search from "$lib/components/Search.svelte";
-  import TeamInfo from "$lib/components/TeamInfo.svelte";
+  import PlayerSetRender from "$lib/components/PlayerSetRender.svelte";
   import { PUBLIC_API_URL } from "$env/static/public";
   import { onMount } from "svelte";
   import { GameTypes, globalStates } from "$lib/components/Utils.svelte";
@@ -150,14 +150,14 @@
     </Search>
     <div id="playing">
       <!--This is hella slow should be optimized. Sveltes weird array does not let reverse work-->
-      {#each Array.from(playingTeams).reverse() as team, index}
-        <TeamInfo
-          {team}
+      {#each Array.from(playingTeams).reverse() as playerSet, index}
+        <PlayerSetRender
+          {playerSet}
           {gameType}
           editable={true}
           add={() => {
             document.getElementById("search")?.focus();
-            selectedTeam = team;
+            selectedTeam = playerSet;
           }}
           remove={() => {
             playingTeams.splice(index, 1);
