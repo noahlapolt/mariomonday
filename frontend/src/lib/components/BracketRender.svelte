@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import PlayerSetRender from "./PlayerSetRender.svelte";
   import { GameTypes } from "./Utils.svelte";
 
@@ -8,300 +9,2103 @@
     bracketId: string;
   } = $props();
 
-  // Get the bracket from the server for now I will make it up.
-  const evilBracket: Bracket = {
-    id: "",
-    date: new Date(),
-    gameType: "SMASH_ULTIMATE_SINGLES",
-    winners: [],
-    losers: [],
-    gameSets: [
-      [
-        {
-          id: "Game A",
-          playerSets: [
-            {
-              id: "Reed",
-              name: "Reed",
-              players: [
-                {
-                  id: "Reed",
-                  name: "Reed",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-            {
-              id: "Noah",
-              name: "Noah",
-              players: [
-                {
-                  id: "Noah",
-                  name: "Noah",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-          ],
-          winners: [],
-          previousGameSets: [],
-          games: [],
-        },
-        {
-          id: "Game A",
-          playerSets: [
-            {
-              id: "Reed",
-              name: "Reed",
-              players: [
-                {
-                  id: "Reed",
-                  name: "Reed",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-            {
-              id: "Noah",
-              name: "Noah",
-              players: [
-                {
-                  id: "Noah",
-                  name: "Noah",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-          ],
-          winners: [],
-          previousGameSets: [],
-          games: [],
-        },
-        {
-          id: "Game A",
-          playerSets: [
-            {
-              id: "Reed",
-              name: "Reed",
-              players: [
-                {
-                  id: "Reed",
-                  name: "Reed",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-            {
-              id: "Noah",
-              name: "Noah",
-              players: [
-                {
-                  id: "Noah",
-                  name: "Noah",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-          ],
-          winners: [],
-          previousGameSets: [],
-          games: [],
-        },
-        {
-          id: "Game A",
-          playerSets: [
-            {
-              id: "Reed",
-              name: "Reed",
-              players: [
-                {
-                  id: "Reed",
-                  name: "Reed",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-            {
-              id: "Noah",
-              name: "Noah",
-              players: [
-                {
-                  id: "Noah",
-                  name: "Noah",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-          ],
-          winners: [],
-          previousGameSets: [],
-          games: [],
-        },
-        {
-          id: "Game A",
-          playerSets: [
-            {
-              id: "Reed",
-              name: "Reed",
-              players: [
-                {
-                  id: "Reed",
-                  name: "Reed",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-            {
-              id: "Noah",
-              name: "Noah",
-              players: [
-                {
-                  id: "Noah",
-                  name: "Noah",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-          ],
-          winners: [],
-          previousGameSets: [],
-          games: [],
-        },
-        {
-          id: "Game A",
-          playerSets: [
-            {
-              id: "Reed",
-              name: "Reed",
-              players: [
-                {
-                  id: "Reed",
-                  name: "Reed",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-            {
-              id: "Noah",
-              name: "Noah",
-              players: [
-                {
-                  id: "Noah",
-                  name: "Noah",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-          ],
-          winners: [],
-          previousGameSets: [],
-          games: [],
-        },
-        {
-          id: "Game A",
-          playerSets: [
-            {
-              id: "Reed",
-              name: "Reed",
-              players: [
-                {
-                  id: "Reed",
-                  name: "Reed",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-            {
-              id: "Noah",
-              name: "Noah",
-              players: [
-                {
-                  id: "Noah",
-                  name: "Noah",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-          ],
-          winners: [],
-          previousGameSets: [],
-          games: [],
-        },
+  // All brackets for testing.
+  let testBrackets: Record<string, Bracket> = {
+    "0": {
+      id: "0",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_SINGLES",
+      winners: [],
+      losers: [],
+      gameSets: [],
+    },
+    "1": {
+      id: "1",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_SINGLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
       ],
-      [
-        {
-          id: "Game C",
-          playerSets: [],
-          winners: [],
-          previousGameSets: ["", ""],
-          games: [],
-        },
-        {
-          id: "Game C",
-          playerSets: [],
-          winners: [],
-          previousGameSets: ["", ""],
-          games: [],
-        },
-        {
-          id: "Game C",
-          playerSets: [],
-          winners: [],
-          previousGameSets: ["", ""],
-          games: [],
-        },
-        {
-          id: "Game C",
-          playerSets: [
-            {
-              id: "Reed",
-              name: "Reed",
-              players: [
-                {
-                  id: "Reed",
-                  name: "Reed",
-                  eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
-                },
-              ],
-            },
-          ],
-          winners: [],
-          previousGameSets: ["", ""],
-          games: [],
-        },
+    },
+    "2": {
+      id: "2",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_SINGLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
       ],
-      [
-        {
-          id: "Game C",
-          playerSets: [],
-          winners: [],
-          previousGameSets: ["", ""],
-          games: [],
-        },
-        {
-          id: "Game C",
-          playerSets: [],
-          winners: [],
-          previousGameSets: ["", ""],
-          games: [],
-        },
+    },
+    "3": {
+      id: "3",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_SINGLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+        ],
       ],
-      [
-        {
-          id: "Game C",
-          playerSets: [],
-          winners: [],
-          previousGameSets: ["", ""],
-          games: [],
-        },
+    },
+    "4": {
+      id: "4",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_SINGLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
       ],
-    ],
+    },
+    "5": {
+      id: "5",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_SINGLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "6": {
+      id: "6",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_SINGLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "7": {
+      id: "7",
+      date: new Date(),
+      gameType: "MARIO_KART_8",
+      winners: [],
+      losers: [],
+      gameSets: [],
+    },
+    "8": {
+      id: "8",
+      date: new Date(),
+      gameType: "MARIO_KART_8",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "9": {
+      id: "9",
+      date: new Date(),
+      gameType: "MARIO_KART_8",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "10": {
+      id: "10",
+      date: new Date(),
+      gameType: "MARIO_KART_8",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "11": {
+      id: "11",
+      date: new Date(),
+      gameType: "MARIO_KART_8",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "12": {
+      id: "12",
+      date: new Date(),
+      gameType: "MARIO_KART_8",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "13": {
+      id: "13",
+      date: new Date(),
+      gameType: "MARIO_KART_8",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Reed",
+                name: "Reed",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Noah",
+                name: "Noah",
+                players: [
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Jack",
+                name: "Jack",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Zach",
+                name: "Zach",
+                players: [
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { MARIO_KART_8: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "14": {
+      id: "14",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_DOUBLES",
+      winners: [],
+      losers: [],
+      gameSets: [],
+    },
+    "15": {
+      id: "15",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_DOUBLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "16": {
+      id: "16",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_DOUBLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "17": {
+      id: "17",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_DOUBLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "18": {
+      id: "18",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_DOUBLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "19": {
+      id: "19",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_DOUBLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
+    "20": {
+      id: "20",
+      date: new Date(),
+      gameType: "SMASH_ULTIMATE_DOUBLES",
+      winners: [],
+      losers: [],
+      gameSets: [
+        [
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [
+              {
+                id: "Team A",
+                name: "Team A",
+                players: [
+                  {
+                    id: "Reed",
+                    name: "Reed",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Noah",
+                    name: "Noah",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+              {
+                id: "Team B",
+                name: "Team B",
+                players: [
+                  {
+                    id: "Jack",
+                    name: "Jack",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                  {
+                    id: "Zach",
+                    name: "Zach",
+                    eloMap: { SMASH_ULTIMATE_SINGLES: 1500 },
+                  },
+                ],
+              },
+            ],
+            winners: [],
+            previousGameSets: [],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: [""],
+            games: [],
+          },
+        ],
+        [
+          {
+            id: "Game A",
+            playerSets: [],
+            winners: [],
+            previousGameSets: ["", ""],
+            games: [],
+          },
+        ],
+      ],
+    },
   };
 
-  let bracket = $state(evilBracket);
-  bracket.gameSets.forEach((round, roundIndex) => {
-    round.forEach((gameSet) => {});
-  });
+  let bracket = $state(testBrackets[bracketId]);
+  const gameInfo = GameTypes[bracket.gameType];
+  const heightOfSet =
+    40 * gameInfo.playersOnATeam + (gameInfo.playersOnATeam > 1 ? 30 : 0);
+  const heightCombined = (heightOfSet + 10) * gameInfo.maxPlayerSets;
+  const minGap = 20;
 
   /**
    * Counts up all of the wins from the recorded games and sets the
@@ -348,18 +2152,13 @@
     // Adds the winners.
     for (
       let i = 0;
-      i < sortedWins.length &&
-      i < GameTypes[bracket.gameType].playerSetsToMoveOn;
+      i < sortedWins.length && i < gameInfo.playerSetsToMoveOn;
       i++
     ) {
       gameSet.winners.push(sortedWins[i][1].playerSet);
     }
     // Adds the losers.
-    for (
-      let i = GameTypes[bracket.gameType].playerSetsToMoveOn;
-      i < sortedWins.length;
-      i++
-    ) {
+    for (let i = gameInfo.playerSetsToMoveOn; i < sortedWins.length; i++) {
       bracket.losers.push(sortedWins[i][1].playerSet);
     }
 
@@ -367,9 +2166,7 @@
     if (roundIndex + 1 < bracket.gameSets.length) {
       const nextRound = bracket.gameSets[roundIndex + 1];
       const nextSetIndex = Math.floor(
-        gameSetIndex /
-          (GameTypes[bracket.gameType].maxPlayerSets /
-            GameTypes[bracket.gameType].playerSetsToMoveOn),
+        gameSetIndex / (gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn),
       );
       if (nextSetIndex < nextRound.length) {
         gameSet.winners.forEach((winner) => {
@@ -391,8 +2188,7 @@
     const lastGameIndex = gameSet.games.length - 1;
     if (
       lastGameIndex > -1 &&
-      gameSet.games[lastGameIndex].winners.length <
-        GameTypes[bracket.gameType].playerSetsToMoveOn
+      gameSet.games[lastGameIndex].winners.length < gameInfo.playerSetsToMoveOn
     ) {
       gameSet.games[lastGameIndex].winners.push(playerSet);
     } else {
@@ -439,10 +2235,58 @@
    */
   const isDisabled = (gameSet: GameSet): boolean => {
     return (
-      gameSet.winners.length ===
-        GameTypes[bracket.gameType].playerSetsToMoveOn ||
+      gameSet.winners.length === gameInfo.playerSetsToMoveOn ||
       gameSet.playerSets.length === 0
     );
+  };
+
+  const calcGap = (roundIndex: number): number => {
+    // TODO figure this out.
+    const startGameSetSize = 4;
+    const currentGameSetSize = [4, 2, 1];
+
+    return (
+      (startGameSetSize * (2 * minGap + heightCombined) -
+        currentGameSetSize[roundIndex] * heightCombined) /
+      (2 * currentGameSetSize[roundIndex])
+    );
+  };
+
+  const calcHeight = (gameSet: GameSet, roundIndex: number): number => {
+    // TODO: Simplify
+    const gap = calcGap(roundIndex) * 2;
+    const adjustedSize = gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn;
+    const defaultHeight = 1 - 1 / adjustedSize;
+    const heightAdjustment = adjustedSize / gameSet.previousGameSets.length;
+
+    return (defaultHeight / heightAdjustment) * (gap + heightCombined);
+  };
+
+  const calcTransform = (gameSet: GameSet): number => {
+    const adjustedSize = gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn;
+    return (1 / adjustedSize - 1 / gameSet.previousGameSets.length) * 100;
+  };
+
+  let offset = 0;
+  const snakeCount = (roundIndex: number, gameSetIndex: number): number => {
+    if (
+      roundIndex + 1 < bracket.gameSets.length &&
+      ((gameSetIndex + offset) * gameInfo.playerSetsToMoveOn) /
+        gameInfo.maxPlayerSets <
+        bracket.gameSets[roundIndex + 1].length
+    ) {
+      let snakes =
+        gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn -
+        bracket.gameSets[roundIndex + 1][
+          Math.floor(
+            ((gameSetIndex + offset) * gameInfo.playerSetsToMoveOn) /
+              gameInfo.maxPlayerSets,
+          )
+        ].previousGameSets.length;
+      offset += snakes;
+      return snakes;
+    }
+    return 0;
   };
 </script>
 
@@ -462,20 +2306,18 @@
     {#each bracket.gameSets as round, roundIndex}
       <div class="round">
         <h2>Round {roundIndex + 1}</h2>
-        <!-- This could be optimized. We loop through all of the game sets even if we only need one. -->
         <div class="gameSets">
+          <!--TODO go through the max number of games possible-->
           {#each round as gameSet, gameSetIndex}
             <div class="gameSet">
-              {#if roundIndex !== 0 && gameSet.previousGameSets.length > 1}
+              {#if roundIndex !== 0}
                 <div
                   class="verticalLine"
-                  style={`height: ${(1 / bracket.gameSets[roundIndex - 1].length) * 100}%;`}
+                  style={`height: ${calcHeight(gameSet, roundIndex)}px; transform: translateY(${calcTransform(gameSet)}%)`}
                 ></div>
-              {/if}
-              {#if roundIndex !== 0}
                 <div class="horizontalLine"></div>
               {/if}
-              <div class="set">
+              <div class="set" style={`margin: ${calcGap(roundIndex)}px 0;`}>
                 {#each gameSet.playerSets as playerSet}
                   <button
                     aria-label={`Add a win for ${playerSet.name}.`}
@@ -511,13 +2353,15 @@
                     </div>
                   </button>
                 {/each}
-                {#each { length: GameTypes[bracket.gameType].maxPlayerSets - gameSet.playerSets.length }}
-                  {#if gameSet.previousGameSets.length === GameTypes[bracket.gameType].maxPlayerSets}
-                    <button disabled> -------- </button>
+                {#each { length: gameInfo.maxPlayerSets - gameSet.playerSets.length }}
+                  {#if gameSet.previousGameSets.length === gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn}
+                    <button style={`height: ${heightOfSet}px`} disabled>
+                      --------
+                    </button>
                   {:else}
                     <button
                       aria-label="Revive player."
-                      class="revive"
+                      style={`height: ${heightOfSet}px`}
                       disabled={isDisabled(gameSet)}
                       onclick={revivePlayer}
                     >
@@ -552,9 +2396,16 @@
                 <div class="horizontalLine"></div>
               {/if}
             </div>
+            {#each { length: snakeCount(roundIndex, gameSetIndex) }}
+              <div
+                style={`margin: ${calcGap(roundIndex)}px 0; height: ${heightCombined}px`}
+              ></div>
+            {/each}
           {/each}
         </div>
       </div>
+    {:else}
+      <p>Loading bracket...</p>
     {/each}
   </div>
 </div>
@@ -590,12 +2441,12 @@
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    justify-content: space-around;
     align-items: center;
   }
 
   .gameSet {
     display: flex;
+    align-items: center;
     width: 20rem;
   }
 
@@ -609,27 +2460,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-
-  .revive {
-    margin: 0.15rem;
-    padding: 0.75rem 1.5rem;
+    margin: 5px;
+    padding: 0 0.5rem;
   }
 
   .horizontalLine {
-    height: 0;
+    height: 2px;
     width: 2rem;
-    border: 2px solid white;
-    align-self: center;
+    background-color: white;
   }
 
   .verticalLine {
-    position: absolute;
-    left: 0;
-    width: 0;
-    border: 2px solid white;
-    align-self: center;
-    border-top: none;
-    border-bottom: none;
+    width: 2px;
+    background-color: white;
   }
 </style>

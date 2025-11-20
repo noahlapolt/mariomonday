@@ -21,18 +21,26 @@
     removePlayer?: (player: Player) => void;
     children?: Snippet;
   } = $props();
+
+  const calcHeight = () => {
+    return GameTypes[gameType].playersOnATeam > 1
+      ? GameTypes[gameType].playersOnATeam * 40 + 30
+      : Math.max(playerSet.players.length * 40, 40);
+  };
 </script>
 
-<div class={GameTypes[gameType].playersOnATeam > 1 ? "team" : ""}>
+<div class="team" style={`height: ${calcHeight()}px`}>
   {#if GameTypes[gameType].playersOnATeam > 1}
-    <EditableText
-      label="Team Name: "
-      placeholder={playerSet.name}
-      {editable}
-      onSave={(text) => {
-        playerSet.name = text;
-      }}
-    />
+    <div class="teamName">
+      <EditableText
+        label="Team Name: "
+        placeholder={playerSet.name}
+        {editable}
+        onSave={(text) => {
+          playerSet.name = text;
+        }}
+      />
+    </div>
   {/if}
   {#each playerSet.players as player, index}
     <PlayerRender
@@ -50,7 +58,7 @@
       {@render children?.()}</PlayerRender
     >
   {/each}
-  {#if playerSet.players.length < GameTypes[gameType].playersOnATeam}
+  {#each { length: GameTypes[gameType].playersOnATeam - playerSet.players.length }}
     <button
       class="teamAdd"
       aria-label="add player to a team"
@@ -67,7 +75,7 @@
         />
       </svg>
     </button>
-  {/if}
+  {/each}
 </div>
 
 <style>
@@ -78,7 +86,16 @@
     border-radius: 0.5rem;
   }
 
+  .teamName {
+    display: flex;
+    align-items: center;
+    height: 30px;
+  }
+
   .teamAdd {
-    margin: 0.45rem 0.5rem;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    flex-grow: 1;
   }
 </style>

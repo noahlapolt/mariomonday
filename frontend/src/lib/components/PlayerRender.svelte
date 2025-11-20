@@ -79,8 +79,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 0.25rem 0.5rem;
     padding: 0 0.5rem;
+    height: 40px;
   }
 
   .info {

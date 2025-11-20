@@ -3,7 +3,7 @@
 </script>
 
 <main>
-  <BracketRender bracketId={""} />
+  <BracketRender bracketId="0" />
 </main>
 
 <style>
