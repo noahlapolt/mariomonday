@@ -31,7 +31,7 @@ public class RandomSeeder extends AbstractSeeder {
   public List<PlayerSet> seed(Set<PlayerSet> unseededPlayers, GameType gameType) {
     List<PlayerSet> teams = new ArrayList<>(unseededPlayers);
     // First sort by ELO to make random consistent with seed
-    // since set ordering is not random
+    // since set ordering is random
     teams.sort(Comparator.comparingInt(team -> team.getElo(gameType)));
     Collections.shuffle(teams, rand);
     return teams;
