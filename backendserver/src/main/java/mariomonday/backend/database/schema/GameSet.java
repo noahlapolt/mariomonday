@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NonNull;
 import lombok.Singular;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -27,21 +26,18 @@ public class GameSet {
   /**
    * The winners of the set
    */
-  @DocumentReference(lazy = true)
   @Singular
   private Set<PlayerSet> winners;
 
   /**
    * The losers of the set
    */
-  @DocumentReference(lazy = true)
   @Singular
   private Set<PlayerSet> losers;
 
   /**
    * The playerSets added to this set not from previous games
    */
-  @DocumentReference(lazy = true)
   @Singular
   private Set<PlayerSet> addedPlayerSets;
 

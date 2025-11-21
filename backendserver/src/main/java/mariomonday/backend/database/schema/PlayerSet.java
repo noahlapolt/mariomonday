@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 import lombok.Value;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 /**
@@ -20,13 +18,11 @@ public class PlayerSet {
   /**
    * Id of this player set
    */
-  @Id
   String id;
 
   /**
    * The players in this playerSet. Attempting to make this unique so every team/person combo only appears a single time
    */
-  @Indexed(unique = true)
   @DocumentReference(lazy = true)
   @Singular
   Set<Player> players;

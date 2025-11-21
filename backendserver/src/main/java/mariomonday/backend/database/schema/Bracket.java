@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
 import org.springframework.data.annotation.Id;
@@ -50,11 +49,10 @@ public class Bracket {
   private final GameType gameType;
 
   /**
-   * The players who participated in this bracket
+   * The teams who participated in this bracket. Teams can be a single player
    */
-  @DocumentReference(lazy = true)
   @Singular
-  private Set<PlayerSet> players;
+  private Set<PlayerSet> teams;
 
   /**
    * The sets in this bracket

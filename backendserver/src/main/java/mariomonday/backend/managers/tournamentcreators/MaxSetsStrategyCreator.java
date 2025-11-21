@@ -18,7 +18,7 @@ public class MaxSetsStrategyCreator extends AbstractBracketCreator {
 
   private final Clock clock;
 
-  MaxSetsStrategyCreator(@Autowired Clock clock) {
+  public MaxSetsStrategyCreator(@Autowired Clock clock) {
     this.clock = clock;
   }
 
@@ -31,7 +31,7 @@ public class MaxSetsStrategyCreator extends AbstractBracketCreator {
     int maxRound = getMaxRound(minGamesNecessary, gameType);
 
     Bracket.BracketBuilder bracketBuilder = Bracket.builder()
-      .players(playerSets)
+      .teams(playerSets)
       .rounds(maxRound)
       .date(clock.instant())
       .gameType(gameType);

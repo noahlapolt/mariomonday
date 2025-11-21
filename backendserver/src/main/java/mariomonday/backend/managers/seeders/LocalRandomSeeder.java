@@ -44,7 +44,9 @@ public class LocalRandomSeeder extends AbstractSeeder {
     // since set ordering is random
     teams.sort(Comparator.comparingInt(team -> team.getElo(gameType)));
     int eloDifference = teams.get(teams.size() - 1).getElo(gameType) - teams.get(0).getElo(gameType);
-    int maxEloChange = (int) (MAX_ELO_VARIANCE * eloDifference);
+    // random cannot get next int when maxElo is 0, so if everyone is the same we can just set it
+    // to 1
+    int maxEloChange = eloDifference == 0 ? 1 : (int) (MAX_ELO_VARIANCE * eloDifference);
 
     // In order to make the randomization more understandable to follow,
     // each team gets assigned a "new ELO", which is then used to seed

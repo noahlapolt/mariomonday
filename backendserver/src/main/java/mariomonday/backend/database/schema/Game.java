@@ -25,14 +25,12 @@ public class Game {
   /**
    * The player IDs of the winners of the game
    */
-  @DocumentReference(lazy = true)
   @Singular
   Set<PlayerSet> winners;
 
   /**
    * The player IDs of the players in the game
    */
-  @DocumentReference(lazy = true)
   @Singular
   Set<PlayerSet> playerSets;
 }
