@@ -2,6 +2,7 @@ package mariomonday.backend.apis.schema;
 
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import mariomonday.backend.database.schema.GameType;
@@ -14,9 +15,10 @@ import mariomonday.backend.database.schema.GameType;
 public class CreateBracketRequest {
 
   /**
-   * List of teams, where each team is represented by a list of player IDs
+   * Map from team name to players on the team,
+   * where each team is represented by a list of player IDs
    */
-  private List<List<String>> teams;
+  private Map<String, List<String>> teams;
 
   /**
    * The game type of the bracket

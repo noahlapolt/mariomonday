@@ -2,12 +2,13 @@ package mariomonday.backend.apis;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import mariomonday.backend.apis.schema.CreateBracketRequest;
 import mariomonday.backend.database.schema.Bracket;
-import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.Player;
 import mariomonday.backend.database.schema.PlayerSet;
@@ -20,8 +21,6 @@ import mariomonday.backend.managers.seeders.AbstractSeeder;
 import mariomonday.backend.managers.tournamentcreators.AbstractBracketCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -91,9 +90,8 @@ public class BracketController {
    */
   @PostMapping("/bracket")
   Bracket postBracket(@RequestBody CreateBracketRequest request) {
-    // Need to populate team names as well
     GameType gameType = request.getGameType();
-    List<List<String>> teams = request.getTeams();
+    Map<String, List<String>> teams = request.getTeams();
     if (gameType == null) {
       throw new InvalidRequestException("Game Type must have a value");
     }
@@ -103,22 +101,27 @@ public class BracketController {
     }
     Set<PlayerSet> unseededTeams = new HashSet<>();
 
-    for (List<String> team : teams) {
-      if (team == null) {
+    for (Entry<String, List<String>> team : teams.entrySet()) {
+      String teamName = team.getKey();
+      List<String> playerIds = team.getValue();
+      if (teamName == null) {
+        throw new InvalidRequestException("Cannot have a null team name!");
+      }
+      if (playerIds == null) {
         throw new InvalidRequestException("Cannot have a null team!");
       }
-      if (team.isEmpty()) {
+      if (playerIds.isEmpty()) {
         throw new InvalidRequestException("Cannot have an empty team!");
       }
-      if (team.stream().anyMatch(Objects::isNull)) {
+      if (playerIds.stream().anyMatch(Objects::isNull)) {
         throw new InvalidRequestException("Cannot have a null player ID!");
       }
-      List<Player> players = team.stream().map(playerId ->
+      List<Player> players = playerIds.stream().map(playerId ->
           playerRepo.findById(playerId).get()).toList();
       if (players.stream().anyMatch(Objects::isNull)) {
         throw new InvalidRequestException("Some players cannot be found");
       }
-      unseededTeams.add(PlayerSet.builder().players(players).build());
+      unseededTeams.add(PlayerSet.builder().name(teamName).players(players).build());
     }
 
     Bracket bracket = bracketCreator.fromPlayerSets(gameType, seeder.seed(unseededTeams, gameType));

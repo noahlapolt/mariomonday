@@ -32,7 +32,7 @@ public class MaxSetsStrategyCreator extends AbstractBracketCreator {
 
     Bracket.BracketBuilder bracketBuilder = Bracket.builder()
       .teams(playerSets)
-      .rounds(maxRound)
+      .rounds(maxRound +  1)
       .date(clock.instant())
       .gameType(gameType);
 
