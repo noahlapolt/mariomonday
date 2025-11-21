@@ -49,4 +49,13 @@ public class PlayerSet {
       return name;
     }
   }
+
+  /**
+   * Get the total ELO for this team
+   * @param gameType The game type to get ELO for
+   * @return The ELO of this team
+   */
+  public int getElo(GameType gameType) {
+    return players.stream().reduce(0, (eloSoFar, player) -> player.getEloMap().get(gameType) + eloSoFar, Integer::sum);
+  }
 }
