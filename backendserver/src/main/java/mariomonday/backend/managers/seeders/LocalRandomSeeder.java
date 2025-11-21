@@ -7,14 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.ToIntFunction;
 import mariomonday.backend.database.schema.GameType;
-import mariomonday.backend.database.schema.Player;
 import mariomonday.backend.database.schema.PlayerSet;
 
 /**
- * Seeder that uses ELO, but will do a small randomization to ensure that not each.
+ * Seeder that uses ELO, but will do a small randomization to ensure that
+ * not each bracket is the exact same once ELO is settled.
  * This is done by finding the highest and lowest ELOs, taking the difference between the two
  * and then adding/subtracting a random percentage of that number to each player
  * (with a cap on how much it can change)
