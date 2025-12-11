@@ -2,9 +2,11 @@
   --prime: #0c0c0c;
   --second: #890005;
   --hover: #670003;
+  --disabled: #2c0001;
   --text-prime: #ffffff;
   --text-second: #ffffff;
   --text-hover: #ffffff;
+  --text-disabled: #ffffff;
 }
 
 a {
@@ -32,13 +34,27 @@ button {
   padding: 0.5rem;
   margin: 0.15rem;
   display: flex;
-  color: var(--text-prime);
+  color: var(--text-second);
   justify-content: center;
 }
 
 button:hover {
   background-color: var(--hover);
   color: var(--text-hover);
+}
+
+button:disabled {
+  background-color: var(--disabled);
+  color: var(--text-disabled);
+}
+
+button:disabled:hover {
+  background-color: var(--disabled);
+  color: var(--text-disabled);
+}
+
+button:enabled {
+  cursor: pointer;
 }
 
 svg {
