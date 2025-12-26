@@ -2,7 +2,6 @@ package mariomonday.backend.database.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
-import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +16,7 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 @Data
 @Builder
 @Document
-public class GameSet {
+public class GameSet implements Comparable<GameSet> {
 
   @Id
   private final String id;
@@ -53,7 +52,7 @@ public class GameSet {
 
   @DocumentReference(lazy = true)
   @Singular
-  private List<Game> games;
+  private Set<Game> games;
 
   @JsonIgnore
   public int getNumEmptySlots() {
@@ -96,5 +95,13 @@ public class GameSet {
   @JsonIgnore
   public boolean isValidGameSet() {
     return getTotalPlayers() <= gameType.getMaxPlayerSets();
+  }
+
+  /**
+   * Sort by ID. Not an important metric, but makes sorting consistent.
+   */
+  @Override
+  public int compareTo(GameSet other) {
+    return this.getId().compareTo(other.getId());
   }
 }

@@ -1,6 +1,9 @@
 package mariomonday.backend.database.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
 import java.util.Set;
 import lombok.Builder;
@@ -69,5 +72,15 @@ public class Bracket {
       .filter(gs -> gs.getRoundIndex() == 0)
       .findFirst()
       .orElse(null);
+  }
+
+  public static Bracket loadLazyBracket(Bracket bracket) {
+    try {
+      var objectMapper = new ObjectMapper();
+      objectMapper.registerModule(new JavaTimeModule());
+      return objectMapper.readValue(objectMapper.writeValueAsString(bracket), Bracket.class);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException("Failed to load lazy bracket. This should never happen");
+    }
   }
 }
