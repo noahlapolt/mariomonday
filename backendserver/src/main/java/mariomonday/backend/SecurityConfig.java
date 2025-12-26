@@ -101,7 +101,7 @@ public class SecurityConfig {
           .permitAll()
           .requestMatchers(HttpMethod.GET)
           .permitAll()
-          .requestMatchers("/login")
+          .requestMatchers("/api/login")
           .permitAll()
           .anyRequest()
           .authenticated()

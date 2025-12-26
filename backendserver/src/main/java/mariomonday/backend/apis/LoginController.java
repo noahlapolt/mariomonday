@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  * which is tied to the authenticated session and should be used for all requests that require auth
  */
 @RestController
+@RequestMapping(value = "/api")
 public class LoginController {
 
   /**
