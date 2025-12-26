@@ -21,6 +21,7 @@ import mariomonday.backend.error.exceptions.AlreadyExistsException;
 import mariomonday.backend.error.exceptions.InvalidRequestException;
 import mariomonday.backend.error.exceptions.NotFoundException;
 import mariomonday.backend.managers.tournamentcreators.AbstractBracketCreator;
+import mariomonday.backend.utils.BaseSpringTest;
 import mariomonday.backend.utils.TestDataUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -29,41 +30,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-public class BracketControllerTest {
-
-  @Autowired
-  PlayerRepository playerRepository;
-
-  @Autowired
-  GameSetRepository gameSetRepository;
-
-  @Autowired
-  BracketRepository bracketRepository;
-
-  @Autowired
-  BracketController bracketController;
+public class BracketControllerTest extends BaseSpringTest {
 
   Map<String, Player> playerNameToPlayer;
 
   @BeforeEach
-  public void setUp() throws Exception {
-    var testPlayer1 = Player.builder().name("Reed").eloMap(generateDefaultEloMap()).build();
-    var testPlayer2 = Player.builder().name("Zach").eloMap(generateDefaultEloMap()).build();
-    var testPlayer3 = Player.builder().name("Noah").eloMap(generateDefaultEloMap()).build();
-    var testPlayer4 = Player.builder().name("Jack").eloMap(generateDefaultEloMap()).build();
+  public void setUp() {
+    var testPlayer1 = Player.builder().name("Reed").eloMap(Player.generateStartingEloMap()).build();
+    var testPlayer2 = Player.builder().name("Zach").eloMap(Player.generateStartingEloMap()).build();
+    var testPlayer3 = Player.builder().name("Noah").eloMap(Player.generateStartingEloMap()).build();
+    var testPlayer4 = Player.builder().name("Jack").eloMap(Player.generateStartingEloMap()).build();
     playerRepository.saveAll(List.of(testPlayer1, testPlayer2, testPlayer3, testPlayer4));
     playerNameToPlayer = playerRepository
       .findAll()
       .stream()
       .collect(Collectors.toMap(Player::getName, Function.identity()));
-  }
-
-  @AfterEach
-  public void cleanUp() {
-    playerRepository.deleteAll();
-    bracketRepository.deleteAll();
-    gameSetRepository.deleteAll();
   }
 
   @Test
@@ -320,8 +301,7 @@ public class BracketControllerTest {
   }
 
   @Test
-  public void testGetBracket_shouldReturnBracket_whenExists() throws JsonProcessingException {
-    // Fix this test then we r good to merge
+  public void testGetBracket_shouldReturnBracket_whenExists() {
     // Setup
     var bracketReq = CreateBracketRequest.builder()
       .teams(
@@ -344,14 +324,6 @@ public class BracketControllerTest {
     var actualBracket = bracketController.getBracket(expectedBracket.getId());
 
     // Verify
-    Assertions.assertEquals(TestDataUtil.loadLazyBracket(expectedBracket), TestDataUtil.loadLazyBracket(actualBracket));
-  }
-
-  private Map<GameType, Integer> generateDefaultEloMap() {
-    var result = new HashMap<GameType, Integer>();
-    for (var gameType : GameType.values()) {
-      result.put(gameType, Player.STARTING_ELO);
-    }
-    return result;
+    Assertions.assertEquals(expectedBracket, actualBracket);
   }
 }

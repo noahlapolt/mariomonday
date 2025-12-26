@@ -78,11 +78,7 @@ public class PlayerController {
     }
     try {
       // Set ELO to initial value for all games
-      newPlayer.setEloMap(
-        Arrays.stream(GameType.values()).collect(
-          Collectors.toMap(gameType -> gameType, gameType -> Player.STARTING_ELO)
-        )
-      );
+      newPlayer.setEloMap(Player.generateStartingEloMap());
       return playerRepo.save(newPlayer);
     } catch (DuplicateKeyException e) {
       throw new AlreadyExistsException("Given player name is already in use");

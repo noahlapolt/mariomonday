@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import mariomonday.backend.apis.schema.ApiBracket;
 import mariomonday.backend.apis.schema.CreateBracketRequest;
 import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.GameType;
@@ -77,10 +79,12 @@ public class BracketController {
    * @param bracketId The ID of the bracket to get
    */
   @GetMapping("/bracket/{bracketId}")
-  Bracket getBracket(@PathVariable String bracketId) {
-    return bracketRepo
-      .findById(bracketId)
-      .orElseThrow(() -> new NotFoundException("Bracket not found with id: " + bracketId));
+  ApiBracket getBracket(@PathVariable String bracketId) {
+    return ApiBracket.fromBracket(
+      bracketRepo
+        .findById(bracketId)
+        .orElseThrow(() -> new NotFoundException("Bracket not found with id: " + bracketId))
+    );
   }
 
   /**
@@ -89,7 +93,7 @@ public class BracketController {
    * @return The newly created bracket
    */
   @PostMapping("/bracket")
-  Bracket postBracket(@RequestBody CreateBracketRequest request) {
+  public ApiBracket postBracket(@RequestBody CreateBracketRequest request) {
     GameType gameType = request.getGameType();
     Map<String, List<String>> teams = request.getTeams();
     if (gameType == null) {
@@ -135,7 +139,7 @@ public class BracketController {
           playerRepo.findById(playerId).orElseThrow(() -> new InvalidRequestException("Some players cannot be found"))
         )
         .toList();
-      unseededTeams.add(PlayerSet.builder().name(teamName).players(players).build());
+      unseededTeams.add(PlayerSet.builder().name(teamName).players(players).id(UUID.randomUUID().toString()).build());
     }
 
     Bracket bracket = bracketCreator.fromPlayerSets(gameType, seeder.seed(unseededTeams, gameType));
@@ -151,6 +155,6 @@ public class BracketController {
     );
     bracket = bracketRepo.save(bracket);
     // MongoDB does some time truncation and such so we want to get it in that state
-    return bracketRepo.findById(bracket.getId()).get();
+    return ApiBracket.fromBracket(bracketRepo.findById(bracket.getId()).get());
   }
 }
