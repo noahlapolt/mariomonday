@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
  * API endpoint for everything related to brackets
  */
 @RestController
-@RequestMapping(value = "/api" )
+@RequestMapping(value = "/api")
 public class BracketController {
 
   /**
@@ -79,8 +79,8 @@ public class BracketController {
   @GetMapping("/bracket/{bracketId}")
   Bracket getBracket(@PathVariable String bracketId) {
     return bracketRepo
-        .findById(bracketId)
-        .orElseThrow(() -> new NotFoundException("Bracket not found with id: " + bracketId));
+      .findById(bracketId)
+      .orElseThrow(() -> new NotFoundException("Bracket not found with id: " + bracketId));
   }
 
   /**
@@ -95,12 +95,14 @@ public class BracketController {
     if (gameType == null) {
       throw new InvalidRequestException("Game Type must have a value");
     }
-
+    if (teams == null) {
+      throw new InvalidRequestException("Teams must have a value");
+    }
     if (teams.size() < 2) {
       throw new InvalidRequestException("Cannot run a tournament with less than two participants!");
     }
     Set<PlayerSet> unseededTeams = new HashSet<>();
-
+    Set<String> playerIdsInTourney = new HashSet<>();
     for (Entry<String, List<String>> team : teams.entrySet()) {
       String teamName = team.getKey();
       List<String> playerIds = team.getValue();
@@ -113,14 +115,26 @@ public class BracketController {
       if (playerIds.isEmpty()) {
         throw new InvalidRequestException("Cannot have an empty team!");
       }
+      if (playerIds.size() != gameType.getPlayersOnATeam()) {
+        throw new InvalidRequestException(
+          "For game type " + gameType + " teams should be of size " + gameType.getPlayersOnATeam()
+        );
+      }
       if (playerIds.stream().anyMatch(Objects::isNull)) {
         throw new InvalidRequestException("Cannot have a null player ID!");
       }
-      List<Player> players = playerIds.stream().map(playerId ->
-          playerRepo.findById(playerId).get()).toList();
-      if (players.stream().anyMatch(Objects::isNull)) {
-        throw new InvalidRequestException("Some players cannot be found");
+      for (String playerId : playerIds) {
+        if (playerIdsInTourney.contains(playerId)) {
+          throw new InvalidRequestException("Cannot have repeat players in tournament!");
+        }
+        playerIdsInTourney.add(playerId);
       }
+      List<Player> players = playerIds
+        .stream()
+        .map(playerId ->
+          playerRepo.findById(playerId).orElseThrow(() -> new InvalidRequestException("Some players cannot be found"))
+        )
+        .toList();
       unseededTeams.add(PlayerSet.builder().name(teamName).players(players).build());
     }
 
@@ -128,10 +142,15 @@ public class BracketController {
 
     // Save bracket and game sets in DB. Make sure to returned saved objects,
     // since they will have IDs
-    bracket.setGameSets(bracket.getGameSets().stream()
-        .map(gameSet -> gameSetRepo.save(gameSet)).collect(
-            Collectors.toSet()));
+    bracket.setGameSets(
+      bracket
+        .getGameSets()
+        .stream()
+        .map(gameSet -> gameSetRepo.save(gameSet))
+        .collect(Collectors.toSet())
+    );
     bracket = bracketRepo.save(bracket);
-    return bracket;
+    // MongoDB does some time truncation and such so we want to get it in that state
+    return bracketRepo.findById(bracket.getId()).get();
   }
 }

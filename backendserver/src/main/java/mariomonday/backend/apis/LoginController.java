@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  * which is tied to the authenticated session and should be used for all requests that require auth
  */
 @RestController
-@RequestMapping(value = "/api" )
+@RequestMapping(value = "/api")
 public class LoginController {
 
   /**

@@ -1,5 +1,6 @@
 package mariomonday.backend.database.schema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Set;
@@ -54,14 +55,17 @@ public class GameSet {
   @Singular
   private List<Game> games;
 
+  @JsonIgnore
   public int getNumEmptySlots() {
     return Math.max(0, gameType.getMaxPlayerSets() - getTotalPlayers());
   }
 
+  @JsonIgnore
   public boolean isByeRound() {
     return gameType.getPlayerSetsToMoveOn() >= getTotalPlayers();
   }
 
+  @JsonIgnore
   public Set<PlayerSet> getPlayerSetsFromPreviousGames() {
     ImmutableSet.Builder<PlayerSet> setBuilder = ImmutableSet.builder();
 
@@ -70,14 +74,17 @@ public class GameSet {
     return setBuilder.build();
   }
 
+  @JsonIgnore
   public int getTotalPlayers() {
     return getNumPlayersFromPreviousGames() + addedPlayerSets.size();
   }
 
+  @JsonIgnore
   public int getNumPlayersFromPreviousGames() {
     return previousGameSets.stream().mapToInt(GameSet::getExpectedPlayersMovingOn).sum();
   }
 
+  @JsonIgnore
   public int getExpectedPlayersMovingOn() {
     if (winners.isEmpty()) {
       return Math.min(getTotalPlayers(), gameType.getPlayerSetsToMoveOn());
@@ -86,6 +93,7 @@ public class GameSet {
     }
   }
 
+  @JsonIgnore
   public boolean isValidGameSet() {
     return getTotalPlayers() <= gameType.getMaxPlayerSets();
   }

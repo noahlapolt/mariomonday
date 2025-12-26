@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  * API endpoint for everything related to players
  */
 @RestController
-@RequestMapping(value = "/api" )
+@RequestMapping(value = "/api")
 public class PlayerController {
 
   /**

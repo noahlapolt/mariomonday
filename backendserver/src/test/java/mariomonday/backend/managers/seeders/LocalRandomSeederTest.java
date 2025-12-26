@@ -66,18 +66,18 @@ public class LocalRandomSeederTest {
   public void testLocalRandomSeederTest_whenEloSame() {
     // Setup
     var player1 = PlayerSet.builder()
-        .player(Player.builder().name("Reed").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build())
-        .build();
+      .player(Player.builder().name("Reed").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build())
+      .build();
     var player2 = PlayerSet.builder()
-        .player(
-            Player.builder().name("Guy who sucks at smash").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build()
-        )
-        .build();
+      .player(
+        Player.builder().name("Guy who sucks at smash").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build()
+      )
+      .build();
     var player3 = PlayerSet.builder()
-        .player(
-            Player.builder().name("Guy is like ok at smash").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build()
-        )
-        .build();
+      .player(
+        Player.builder().name("Guy is like ok at smash").eloMap(Map.of(GameType.SMASH_ULTIMATE_SINGLES, 1500)).build()
+      )
+      .build();
     var localRandomSeeder = new LocalRandomSeeder(new Random(100));
 
     // Act
@@ -89,7 +89,9 @@ public class LocalRandomSeederTest {
     var prevTeam = seededList.get(0);
     for (int i = 1; i < seededList.size(); i++) {
       // Assert ELO is increasing
-      Assertions.assertTrue(prevTeam.getElo(GameType.SMASH_ULTIMATE_SINGLES) <= seededList.get(i).getElo(GameType.SMASH_ULTIMATE_SINGLES));
+      Assertions.assertTrue(
+        prevTeam.getElo(GameType.SMASH_ULTIMATE_SINGLES) <= seededList.get(i).getElo(GameType.SMASH_ULTIMATE_SINGLES)
+      );
       prevTeam = seededList.get(i);
     }
   }

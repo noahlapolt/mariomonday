@@ -1,5 +1,6 @@
 package mariomonday.backend.database.schema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.util.Set;
 import lombok.Builder;
@@ -61,6 +62,7 @@ public class Bracket {
   @Singular
   private Set<GameSet> gameSets;
 
+  @JsonIgnore
   public GameSet getFinalGameSet() {
     return gameSets
       .stream()
