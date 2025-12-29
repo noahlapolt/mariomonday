@@ -1,5 +1,6 @@
 package mariomonday.backend.database.schema;
 
+import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Singular;
@@ -23,14 +24,13 @@ public class Game {
   String id;
 
   /**
-   * The player IDs of the winners of the game
+   * The player IDs of the players in the game, ordered by their placement in the game.
    */
   @Singular
-  Set<PlayerSet> winners;
+  List<PlayerSet> playerSets;
 
   /**
-   * The player IDs of the players in the game
+   * The game type of this game
    */
-  @Singular
-  Set<PlayerSet> playerSets;
+  private GameType gameType;
 }
