@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import lombok.Builder;
@@ -81,6 +82,19 @@ public class ApiBracket {
    * {@link mariomonday.backend.apis.schema.ApiBracket#gameSets gameSets}
    */
   private static List<List<GameSet>> orderGameSets(Set<GameSet> gameSets) {
+    return groupGameSetsByRound(gameSets)
+      .entrySet()
+      .stream()
+      .sorted(Entry.comparingByKey(Comparator.reverseOrder()))
+      .map(Entry::getValue)
+      .map(sets -> sets.stream().sorted().toList())
+      .toList();
+  }
+
+  /**
+   * Group game sets by round index in a map
+   */
+  private static Map<Integer, List<GameSet>> groupGameSetsByRound(Set<GameSet> gameSets) {
     var result = new HashMap<Integer, List<GameSet>>();
     for (GameSet gameSet : gameSets) {
       int round = gameSet.getRoundIndex();
@@ -89,12 +103,6 @@ public class ApiBracket {
       }
       result.get(round).add(gameSet);
     }
-    return result
-      .entrySet()
-      .stream()
-      .sorted(Comparator.comparingInt(Entry::getKey))
-      .map(Entry::getValue)
-      .map(sets -> sets.stream().sorted().toList())
-      .toList();
+    return result;
   }
 }

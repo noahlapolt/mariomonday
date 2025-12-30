@@ -2,6 +2,7 @@ package mariomonday.backend.utils;
 
 import mariomonday.backend.apis.BracketController;
 import mariomonday.backend.database.tables.BracketRepository;
+import mariomonday.backend.database.tables.GameRepository;
 import mariomonday.backend.database.tables.GameSetRepository;
 import mariomonday.backend.database.tables.PlayerRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -21,6 +22,9 @@ public class BaseSpringTest {
   protected BracketRepository bracketRepository;
 
   @Autowired
+  protected GameRepository gameRepository;
+
+  @Autowired
   protected BracketController bracketController;
 
   @AfterEach
@@ -28,5 +32,6 @@ public class BaseSpringTest {
     playerRepository.deleteAll();
     bracketRepository.deleteAll();
     gameSetRepository.deleteAll();
+    gameRepository.deleteAll();
   }
 }

@@ -2,6 +2,7 @@ package mariomonday.backend.database.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
+import java.util.HashSet;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,10 @@ public class GameSet implements Comparable<GameSet> {
   @Id
   private final String id;
 
+  /**
+   * The round this game set is a part of. Round "0" is the final round,
+   * round "1" is the semi finals, etc.
+   */
   private final Integer roundIndex;
 
   /**
@@ -48,8 +53,11 @@ public class GameSet implements Comparable<GameSet> {
 
   @DocumentReference(lazy = true)
   @Singular
-  private final Set<GameSet> previousGameSets;
+  private Set<GameSet> previousGameSets;
 
+  /**
+   * Games within this set. If this is empty, but the set has winners, that is a forfeit.
+   */
   @DocumentReference(lazy = true)
   @Singular
   private Set<Game> games;
@@ -71,6 +79,14 @@ public class GameSet implements Comparable<GameSet> {
     getPreviousGameSets().forEach(gameSet -> setBuilder.addAll(gameSet.getWinners()));
 
     return setBuilder.build();
+  }
+
+  @JsonIgnore
+  public Set<PlayerSet> getPlayers() {
+    var players = new HashSet<PlayerSet>();
+    players.addAll(getPlayerSetsFromPreviousGames());
+    players.addAll(addedPlayerSets);
+    return players;
   }
 
   @JsonIgnore

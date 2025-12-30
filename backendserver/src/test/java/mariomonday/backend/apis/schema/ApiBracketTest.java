@@ -60,7 +60,7 @@ public class ApiBracketTest extends BaseSpringTest {
     var totalSize = 0;
     for (int i = 0; i < apiBracket.getRounds(); i++) {
       for (var set : apiBracket.getGameSets().get(i)) {
-        Assertions.assertEquals(i, set.getRoundIndex());
+        Assertions.assertEquals(apiBracket.getRounds() - i - 1, set.getRoundIndex());
         Assertions.assertTrue(bracket.getGameSets().contains(set));
         totalSize += 1;
       }
