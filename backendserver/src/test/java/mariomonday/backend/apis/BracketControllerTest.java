@@ -1,6 +1,7 @@
 package mariomonday.backend.apis;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.stream.Collectors;
 import mariomonday.backend.apis.schema.ApiBracket;
 import mariomonday.backend.apis.schema.CompleteGameSetRequest;
 import mariomonday.backend.apis.schema.CreateBracketRequest;
+import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.Player;
 import mariomonday.backend.database.schema.PlayerSet;
@@ -362,6 +364,59 @@ public class BracketControllerTest extends BaseSpringTest {
   }
 
   @Test
+  public void testCompleteGameSet_shouldAddGamesAndDeleteGamesAndUpdateGameSet_whenGameSetAlreadyCompleted() {
+    // Setup
+    var bracket = createBracketWithRandomPlayers();
+    var firstGameSet = bracket.getGameSets().get(0).get(0);
+    var winningOrder = firstGameSet.getPlayers().stream().map(PlayerSet::getId).sorted().toList();
+    var reverseOrder = firstGameSet
+      .getPlayers()
+      .stream()
+      .map(PlayerSet::getId)
+      .sorted(Comparator.reverseOrder())
+      .toList();
+    var req = CompleteGameSetRequest.builder()
+      .games(List.of(winningOrder))
+      .forfeit(false)
+      .winners(winningOrder.subList(0, 1))
+      .build();
+    bracketController.completeGameSet(bracket.getId(), firstGameSet.getId(), req);
+    var originalGames = gameSetRepository
+      .findById(firstGameSet.getId())
+      .orElseThrow(() -> new AssertionError("Could not find game set after completing it."))
+      .getGames();
+
+    // Act
+    req = CompleteGameSetRequest.builder()
+      .games(List.of(reverseOrder))
+      .forfeit(false)
+      .winners(reverseOrder.subList(0, 1))
+      .build();
+    bracketController.completeGameSet(bracket.getId(), firstGameSet.getId(), req);
+
+    // Verify
+    var gameSet = gameSetRepository
+      .findById(firstGameSet.getId())
+      .orElseThrow(() -> new AssertionError("Could not find game set after completing it."));
+    Assertions.assertEquals(gameSet.getWinners().stream().map(PlayerSet::getId).toList(), winningOrder.subList(1, 2));
+    Assertions.assertEquals(gameSet.getLosers().stream().map(PlayerSet::getId).toList(), winningOrder.subList(0, 1));
+    gameSet
+      .getGames()
+      .forEach(game -> {
+        Assertions.assertEquals(game.getPlayerSets().stream().map(PlayerSet::getId).toList(), reverseOrder);
+        Assertions.assertEquals(GameType.SMASH_ULTIMATE_SINGLES, game.getGameType());
+        gameRepository
+          .findById(game.getId())
+          .orElseThrow(() ->
+            new AssertionError("Game with ID " + game.getId() + " was not saved during set completion process")
+          );
+      });
+    Assertions.assertEquals(1, gameSet.getGames().size());
+    // Make sure original game was deleted
+    Assertions.assertTrue(originalGames.stream().allMatch(game -> gameRepository.findById(game.getId()).isEmpty()));
+  }
+
+  @Test
   public void testCompleteGameSet_shouldAddGamesAndUpdateGameSet_whenMultipleGames() {
     // Setup
     var bracket = createBracketWithRandomPlayers();
@@ -672,6 +727,51 @@ public class BracketControllerTest extends BaseSpringTest {
     Assertions.assertThrows(InvalidRequestException.class, () ->
       bracketController.completeGameSet(bracket.getId(), firstGameSet.getId(), req)
     );
+  }
+
+  @Test
+  public void testCompleteGameSet_shouldComplain_whenGameSetAlreadyCompletedAndNextGameSetAlsoCompleted() {
+    // Setup
+    var bracket = createBracketWithRandomPlayers();
+    // Complete the first two rounds, then we can try and change the first round after the fact
+    // (it should fail)
+    bracket
+      .getGameSets()
+      .get(0)
+      .forEach(gs -> completeGameSet(bracket.getId(), gs));
+    bracket
+      .getGameSets()
+      .get(1)
+      .forEach(gs -> completeGameSet(bracket.getId(), gameSetRepository.findById(gs.getId()).get()));
+
+    // Act
+    var firstGameSet = bracket.getGameSets().get(0).get(0);
+    var newWinningOrder = firstGameSet
+      .getPlayers()
+      .stream()
+      .map(PlayerSet::getId)
+      .sorted(Comparator.reverseOrder())
+      .toList();
+
+    // Act
+    var req = CompleteGameSetRequest.builder()
+      .games(List.of(newWinningOrder))
+      .forfeit(false)
+      .winners(newWinningOrder.subList(0, 1))
+      .build();
+    Assertions.assertThrows(InvalidRequestException.class, () ->
+      bracketController.completeGameSet(bracket.getId(), firstGameSet.getId(), req)
+    );
+  }
+
+  private void completeGameSet(String bracketId, GameSet gameSet) {
+    var winningOrder = gameSet.getPlayers().stream().map(PlayerSet::getId).sorted().toList();
+    var req = CompleteGameSetRequest.builder()
+      .games(List.of(winningOrder))
+      .forfeit(false)
+      .winners(winningOrder.subList(0, 1))
+      .build();
+    bracketController.completeGameSet(bracketId, gameSet.getId(), req);
   }
 
   private ApiBracket createBracketWithRandomPlayers() {

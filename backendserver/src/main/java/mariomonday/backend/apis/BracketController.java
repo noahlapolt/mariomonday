@@ -183,6 +183,25 @@ public class BracketController {
   ) {
     var bracket = bracketRepo.findById(bracketId).orElseThrow(() -> new NotFoundException("Bracket not found"));
     var gameSet = gameSetRepo.findById(gameSetId).orElseThrow(() -> new NotFoundException("Game Set not found"));
+    var previouslyCompleted = !gameSet.getWinners().isEmpty();
+    if (previouslyCompleted) {
+      var nextGameSetHasWinners = bracket
+        .getGameSets()
+        .stream()
+        .filter(gs ->
+          gs
+            .getPreviousGameSets()
+            .stream()
+            .anyMatch(pgs -> pgs.getId().equals(gameSet.getId()))
+        )
+        .anyMatch(gs -> !gs.getWinners().isEmpty());
+      if (nextGameSetHasWinners) {
+        throw new InvalidRequestException(
+          "The result previously uploaded for the given game set " +
+            "has already been used in a future game set. It can no longer be changed"
+        );
+      }
+    }
     if (!bracket.getGameSets().stream().map(GameSet::getId).collect(Collectors.toSet()).contains(gameSetId)) {
       throw new InvalidRequestException("The given game set is not associated with the given bracket");
     }
@@ -243,6 +262,10 @@ public class BracketController {
         throw new InvalidRequestException("Game references invalid team.");
       }
       games.add(Game.builder().gameType(bracket.getGameType()).playerSets(orderedTeams).build());
+    }
+    if (previouslyCompleted) {
+      // This set was previously completed with different games, remove them.
+      gameRepo.deleteAll(gameSet.getGames());
     }
     gameSet.setGames(new HashSet<>(gameRepo.saveAll(games)));
     gameSetRepo.save(gameSet);
