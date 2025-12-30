@@ -175,7 +175,7 @@ public class BracketController {
    * @param request The request to create the bracket
    * @return The newly created bracket
    */
-  @PostMapping("/bracket/{bracketId}/completeGameSet/{setId}")
+  @PostMapping("/bracket/{bracketId}/completeGameSet/{gameSetId}")
   public ApiBracket completeGameSet(
     @PathVariable String bracketId,
     @PathVariable String gameSetId,
@@ -191,6 +191,14 @@ public class BracketController {
     }
     if (request.getWinners().isEmpty()) {
       throw new InvalidRequestException("Game set must have winners to be completed!");
+    }
+    if (
+      gameSet
+        .getPreviousGameSets()
+        .stream()
+        .anyMatch(gs -> gs.getWinners().isEmpty())
+    ) {
+      throw new InvalidRequestException("Previous games must have been completed first!");
     }
     var teamsToMoveOn = bracket.getGameType().getPlayerSetsToMoveOn();
     if (request.getWinners().size() > teamsToMoveOn) {
