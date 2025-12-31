@@ -7,17 +7,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import mariomonday.backend.apis.schema.ApiBracket;
 import mariomonday.backend.apis.schema.CompleteGameSetRequest;
 import mariomonday.backend.apis.schema.CreateBracketRequest;
+import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.Player;
 import mariomonday.backend.database.schema.PlayerSet;
 import mariomonday.backend.error.exceptions.InvalidRequestException;
 import mariomonday.backend.error.exceptions.NotFoundException;
+import mariomonday.backend.managers.ratingcalculators.AbstractEloManager;
+import mariomonday.backend.managers.tournamentcreators.MaxSetsStrategyCreator;
 import mariomonday.backend.utils.BaseSpringTest;
 import mariomonday.backend.utils.TestDataUtil;
 import org.junit.jupiter.api.Assertions;
@@ -28,7 +32,7 @@ public class BracketControllerTest extends BaseSpringTest {
 
   Map<String, Player> playerNameToPlayer;
 
-  private Set<Player> randomPlayers;
+  private List<Player> randomPlayers;
 
   @BeforeEach
   public void setUp() {
@@ -40,7 +44,7 @@ public class BracketControllerTest extends BaseSpringTest {
     randomPlayers = TestDataUtil.createNFakePlayers(16)
       .stream()
       .map(playerSet -> playerSet.getPlayers().stream().findFirst().get())
-      .collect(Collectors.toSet());
+      .collect(Collectors.toList());
     playerRepository.insert(randomPlayers);
     playerNameToPlayer = playerRepository
       .findAll()
@@ -666,6 +670,29 @@ public class BracketControllerTest extends BaseSpringTest {
   }
 
   @Test
+  public void testCompleteGameSet_shouldComplain_whenGamesNotEmptyWithByeRound() {
+    // Setup
+    // Create a bracket with a single player, the only game is a bye round
+    var bracket = new MaxSetsStrategyCreator(clock).fromPlayerSets(
+      GameType.SMASH_ULTIMATE_SINGLES,
+      List.of(PlayerSet.builder().id(UUID.randomUUID().toString()).player(playerNameToPlayer.get("Reed")).build())
+    );
+    gameSetRepository.save(bracket.getFinalGameSet());
+    var savedBracket = bracketRepository.save(bracket);
+    var winningOrder = bracket.getFinalGameSet().getPlayers().stream().map(PlayerSet::getId).toList();
+
+    // Act
+    var req = CompleteGameSetRequest.builder()
+      .games(List.of(winningOrder))
+      .forfeit(false)
+      .winners(winningOrder.subList(0, 1))
+      .build();
+    Assertions.assertThrows(InvalidRequestException.class, () ->
+      bracketController.completeGameSet(savedBracket.getId(), bracket.getFinalGameSet().getId(), req)
+    );
+  }
+
+  @Test
   public void testCompleteGameSet_shouldComplain_whenNullWinner() {
     // Setup
     var bracket = createBracketWithRandomPlayers();
@@ -764,12 +791,637 @@ public class BracketControllerTest extends BaseSpringTest {
     );
   }
 
+  @Test
+  public void testCompleteBracket_shouldUpdateWinnersAndElo_whenHappyPath() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Reed"))
+      .findFirst()
+      .get()
+      .getId();
+    var zachId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Zach"))
+      .findFirst()
+      .get()
+      .getId();
+    // haha I win fuck you Zach
+    completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(0), List.of(reedId, zachId));
+
+    // Act
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    var completedBracket = Bracket.loadLazyBracket(bracketRepository.findById(bracket.getId()).get());
+    // Assert bracket winners are set and are the same as the winners of the final game set
+    Assertions.assertEquals(
+      completedBracket.getWinners(),
+      completedBracket.getFinalGameSet().getWinners().stream().findFirst().get().getPlayers()
+    );
+
+    // Assert ELO updates went through
+    var winner = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    Assertions.assertEquals(
+      Player.STARTING_ELO + AbstractEloManager.K_FACTOR / 2,
+      winner.getEloMap().get(GameType.SMASH_ULTIMATE_SINGLES)
+    );
+    var loser = playerRepository.findById(playerNameToPlayer.get("Zach").getId()).get();
+    Assertions.assertEquals(
+      Player.STARTING_ELO - AbstractEloManager.K_FACTOR / 2,
+      loser.getEloMap().get(GameType.SMASH_ULTIMATE_SINGLES)
+    );
+  }
+
+  @Test
+  public void testCompleteBracket_shouldUpdateWinnersAndSplitElo_whenTeams() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "The GOATs",
+          List.of(playerNameToPlayer.get("Reed").getId(), playerNameToPlayer.get("Zach").getId()),
+          "The WOATs",
+          List.of(playerNameToPlayer.get("Noah").getId(), playerNameToPlayer.get("Jack").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_DOUBLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var goatId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("The GOATs"))
+      .findFirst()
+      .get()
+      .getId();
+    var woatId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("The WOATs"))
+      .findFirst()
+      .get()
+      .getId();
+    completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(0), List.of(goatId, woatId));
+
+    // Act
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    var completedBracket = Bracket.loadLazyBracket(bracketRepository.findById(bracket.getId()).get());
+    // Assert bracket winners are set and are the same as the winners of the final game set
+    Assertions.assertEquals(
+      completedBracket.getWinners(),
+      completedBracket.getFinalGameSet().getWinners().stream().findFirst().get().getPlayers()
+    );
+
+    // Assert ELO updates went through for winners, should be split evenly between players
+    var winner = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    Assertions.assertEquals(
+      Player.STARTING_ELO + AbstractEloManager.K_FACTOR / 4,
+      winner.getEloMap().get(GameType.SMASH_ULTIMATE_DOUBLES)
+    );
+    var winner2 = playerRepository.findById(playerNameToPlayer.get("Zach").getId()).get();
+    Assertions.assertEquals(
+      Player.STARTING_ELO + AbstractEloManager.K_FACTOR / 4,
+      winner2.getEloMap().get(GameType.SMASH_ULTIMATE_DOUBLES)
+    );
+
+    // Assert ELO updates went through for losers, should be split evenly between players
+    var loser = playerRepository.findById(playerNameToPlayer.get("Noah").getId()).get();
+    Assertions.assertEquals(
+      Player.STARTING_ELO - AbstractEloManager.K_FACTOR / 4,
+      loser.getEloMap().get(GameType.SMASH_ULTIMATE_DOUBLES)
+    );
+    var loser2 = playerRepository.findById(playerNameToPlayer.get("Jack").getId()).get();
+    Assertions.assertEquals(
+      Player.STARTING_ELO - AbstractEloManager.K_FACTOR / 4,
+      loser2.getEloMap().get(GameType.SMASH_ULTIMATE_DOUBLES)
+    );
+  }
+
+  @Test
+  public void testCompleteBracket_shouldUpdateWinnersAndSplitElo_whenTeamMembersHaveDifferentElo() {
+    // Setup
+    var reed = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    reed.getEloMap().put(GameType.SMASH_ULTIMATE_DOUBLES, 1600);
+    playerRepository.save(reed);
+    var zach = playerRepository.findById(playerNameToPlayer.get("Zach").getId()).get();
+    zach.getEloMap().put(GameType.SMASH_ULTIMATE_DOUBLES, 1400);
+    playerRepository.save(zach);
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "The GOATs",
+          List.of(playerNameToPlayer.get("Reed").getId(), playerNameToPlayer.get("Zach").getId()),
+          "The WOATs",
+          List.of(playerNameToPlayer.get("Noah").getId(), playerNameToPlayer.get("Jack").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_DOUBLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var goatId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("The GOATs"))
+      .findFirst()
+      .get()
+      .getId();
+    var woatId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("The WOATs"))
+      .findFirst()
+      .get()
+      .getId();
+    completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(0), List.of(goatId, woatId));
+
+    // Act
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    var completedBracket = Bracket.loadLazyBracket(bracketRepository.findById(bracket.getId()).get());
+    // Assert bracket winners are set and are the same as the winners of the final game set
+    Assertions.assertEquals(
+      completedBracket.getWinners(),
+      completedBracket.getFinalGameSet().getWinners().stream().findFirst().get().getPlayers()
+    );
+
+    // Assert ELO update is split evenly between winners even though they are different ELO
+    var winner = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    Assertions.assertEquals(
+      1600 + AbstractEloManager.K_FACTOR / 4,
+      winner.getEloMap().get(GameType.SMASH_ULTIMATE_DOUBLES)
+    );
+    var winner2 = playerRepository.findById(playerNameToPlayer.get("Zach").getId()).get();
+    Assertions.assertEquals(
+      1400 + AbstractEloManager.K_FACTOR / 4,
+      winner2.getEloMap().get(GameType.SMASH_ULTIMATE_DOUBLES)
+    );
+  }
+
+  @Test
+  public void testCompleteBracket_shouldIgnoreElo_whenByeRound() {
+    // Setup
+    // Create a bracket with a single player, the only game is a bye round
+    var bracket = new MaxSetsStrategyCreator(clock).fromPlayerSets(
+      GameType.SMASH_ULTIMATE_SINGLES,
+      List.of(PlayerSet.builder().id(UUID.randomUUID().toString()).player(playerNameToPlayer.get("Reed")).build())
+    );
+    gameSetRepository.save(bracket.getFinalGameSet());
+    bracket = bracketRepository.save(bracket);
+
+    var reedId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Reed"))
+      .findFirst()
+      .get()
+      .getId();
+    var req = CompleteGameSetRequest.builder().games(List.of()).forfeit(false).winners(List.of(reedId)).build();
+    bracketController.completeGameSet(bracket.getId(), bracket.getFinalGameSet().getId(), req);
+
+    // Act
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    // Assert ELO is unchanged because only round was a bye
+    var winner = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    Assertions.assertEquals(Player.STARTING_ELO, winner.getEloMap().get(GameType.SMASH_ULTIMATE_DOUBLES));
+  }
+
+  @Test
+  public void testCompleteBracket_shouldIgnoreElo_whenForfeit() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Reed"))
+      .findFirst()
+      .get()
+      .getId();
+    var req = CompleteGameSetRequest.builder().games(List.of()).forfeit(true).winners(List.of(reedId)).build();
+    bracketController.completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(0).getId(), req);
+
+    // Act
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    var completedBracket = Bracket.loadLazyBracket(bracketRepository.findById(bracket.getId()).get());
+    // Assert bracket winners are set and are the same as the winners of the final game set
+    Assertions.assertEquals(
+      completedBracket.getWinners(),
+      completedBracket.getFinalGameSet().getWinners().stream().findFirst().get().getPlayers()
+    );
+
+    // Assert ELO updates went through
+    // No ELO should be impacted, since it was a forfeit
+    var winner = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    Assertions.assertEquals(Player.STARTING_ELO, winner.getEloMap().get(GameType.SMASH_ULTIMATE_SINGLES));
+    var loser = playerRepository.findById(playerNameToPlayer.get("Zach").getId()).get();
+    Assertions.assertEquals(Player.STARTING_ELO, loser.getEloMap().get(GameType.SMASH_ULTIMATE_SINGLES));
+  }
+
+  @Test
+  public void testCompleteBracket_shouldUpdateWinnersAndElo_whenMultipleRounds() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId()),
+          "Noah",
+          List.of(playerNameToPlayer.get("Noah").getId()),
+          "Jack",
+          List.of(playerNameToPlayer.get("Jack").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    Comparator<PlayerSet> reedWins = (team1, team2) -> {
+      if (team1.getName().equals("Reed")) {
+        return -1;
+      } else if (team2.getName().equals("Reed")) {
+        return 1;
+      } else if (team1.getName().equals("Jack")) {
+        return -1;
+      } else if (team2.getName().equals("Jack")) {
+        return 1;
+      } else if (team1.getName().equals("Noah")) {
+        return -1;
+      } else if (team2.getName().equals("Noah")) {
+        return 1;
+      } else {
+        return 0;
+      }
+    };
+    // I beat you all :P
+    var gameOne = bracket.getGameSets().get(0).get(0);
+    completeGameSet(
+      bracket.getId(),
+      gameOne,
+      gameOne.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+    var gameTwo = bracket.getGameSets().get(0).get(1);
+    completeGameSet(
+      bracket.getId(),
+      gameTwo,
+      gameTwo.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+    var finals = gameSetRepository.findById(bracket.getGameSets().get(1).get(0).getId()).get();
+    completeGameSet(
+      bracket.getId(),
+      finals,
+      finals.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+
+    // Act
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    // Assert ELO updates went through
+    var winner = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    Assertions.assertEquals(Player.STARTING_ELO + 32, winner.getEloMap().get(GameType.SMASH_ULTIMATE_SINGLES));
+    var loser = playerRepository.findById(playerNameToPlayer.get("Zach").getId()).get();
+    Assertions.assertEquals(Player.STARTING_ELO - 16, loser.getEloMap().get(GameType.SMASH_ULTIMATE_SINGLES));
+    var loser2 = playerRepository.findById(playerNameToPlayer.get("Jack").getId()).get();
+    Assertions.assertEquals(Player.STARTING_ELO, loser2.getEloMap().get(GameType.SMASH_ULTIMATE_SINGLES));
+    var loser3 = playerRepository.findById(playerNameToPlayer.get("Noah").getId()).get();
+    Assertions.assertEquals(Player.STARTING_ELO - 16, loser3.getEloMap().get(GameType.SMASH_ULTIMATE_SINGLES));
+  }
+
+  @Test
+  public void testCompleteBracket_shouldComplain_whenFinalGameSetNotCompleted() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.completeBracket(bracket.getId()));
+  }
+
+  @Test
+  public void testCompleteBracket_shouldComplain_whenBracketAlreadyCompleted() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Reed"))
+      .findFirst()
+      .get()
+      .getId();
+    var zachId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Zach"))
+      .findFirst()
+      .get()
+      .getId();
+    completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(0), List.of(reedId, zachId));
+    bracketController.completeBracket(bracket.getId());
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.completeBracket(bracket.getId()));
+  }
+
+  @Test
+  public void testCompleteBracket_shouldComplain_whenBracketDoesNotExist() {
+    Assertions.assertThrows(NotFoundException.class, () -> bracketController.completeBracket("Fake bracket"));
+  }
+
+  @Test
+  public void testCompleteBracket_shouldComplain_whenTooManyWinners() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId()),
+          "Noah",
+          List.of(playerNameToPlayer.get("Noah").getId()),
+          "Jack",
+          List.of(playerNameToPlayer.get("Jack").getId())
+        )
+      )
+      .gameType(GameType.MARIO_KART_WORLD)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Reed"))
+      .findFirst()
+      .get()
+      .getId();
+    var zachId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Zach"))
+      .findFirst()
+      .get()
+      .getId();
+    var noahId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Noah"))
+      .findFirst()
+      .get()
+      .getId();
+    var jackId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Jack"))
+      .findFirst()
+      .get()
+      .getId();
+    var req = CompleteGameSetRequest.builder()
+      .games(List.of(List.of(reedId, zachId, jackId, noahId)))
+      .forfeit(false)
+      .winners(List.of(reedId, zachId))
+      .build();
+    bracketController.completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(0).getId(), req);
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.completeBracket(bracket.getId()));
+  }
+
+  @Test
+  public void testEntireSinglesBracket_startToFinish() {
+    // 4 players, 2 rounds
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId()),
+          "Noah",
+          List.of(playerNameToPlayer.get("Noah").getId()),
+          "Jack",
+          List.of(playerNameToPlayer.get("Jack").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    Comparator<PlayerSet> reedWins = (team1, team2) -> {
+      if (team1.getName().equals("Reed")) {
+        return -1;
+      } else if (team1.getName().equals("Jack") && !team2.getName().equals("Reed")) {
+        return -1;
+      } else if (team1.getName().equals("Noah") && !team2.getName().equals("Reed") && !team2.getName().equals("Jack")) {
+        return -1;
+      } else {
+        return 1;
+      }
+    };
+
+    // Act
+    var bracket = bracketController.postBracket(bracketReq);
+    var gameOne = bracket.getGameSets().get(0).get(0);
+    completeGameSet(
+      bracket.getId(),
+      gameOne,
+      gameOne.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+    var gameTwo = bracket.getGameSets().get(0).get(1);
+    completeGameSet(
+      bracket.getId(),
+      gameTwo,
+      gameTwo.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+    var finals = gameSetRepository.findById(bracket.getGameSets().get(1).get(0).getId()).get();
+    completeGameSet(
+      bracket.getId(),
+      finals,
+      finals.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    var completedBracket = Bracket.loadLazyBracket(bracketRepository.findById(bracket.getId()).get());
+    Assertions.assertEquals(1, completedBracket.getWinners().size());
+    Assertions.assertEquals("Reed", completedBracket.getWinners().stream().findFirst().get().getName());
+  }
+
+  @Test
+  public void testEntireKartBracket_startToFinish() {
+    // 8 players, 2 rounds
+    // Setup
+    var teams = randomPlayers
+      .stream()
+      .toList()
+      .subList(0, 8)
+      .stream()
+      .collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())));
+    teams.remove(randomPlayers.stream().findFirst().get().getId());
+    teams.put("Reed", List.of(playerNameToPlayer.get("Reed").getId()));
+    var bracketReq = CreateBracketRequest.builder().teams(teams).gameType(GameType.MARIO_KART_8).build();
+    Comparator<PlayerSet> reedWins = (team1, team2) -> {
+      if (team1.getName().equals("Reed")) {
+        return -1;
+      } else if (team2.getName().equals("Reed")) {
+        return 1;
+      } else {
+        return -1;
+      }
+    };
+
+    // Act
+    var bracket = bracketController.postBracket(bracketReq);
+    var gameOne = bracket.getGameSets().get(0).get(0);
+    completeGameSet(
+      bracket.getId(),
+      gameOne,
+      gameOne.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList(),
+      2
+    );
+    var gameTwo = bracket.getGameSets().get(0).get(1);
+    completeGameSet(
+      bracket.getId(),
+      gameTwo,
+      gameTwo.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList(),
+      2
+    );
+    var finals = gameSetRepository.findById(bracket.getGameSets().get(1).get(0).getId()).get();
+    completeGameSet(
+      bracket.getId(),
+      finals,
+      finals.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList(),
+      1
+    );
+
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    var completedBracket = Bracket.loadLazyBracket(bracketRepository.findById(bracket.getId()).get());
+    Assertions.assertEquals(1, completedBracket.getWinners().size());
+    Assertions.assertEquals("Reed", completedBracket.getWinners().stream().findFirst().get().getName());
+  }
+
+  @Test
+  public void testEntireDoublesBracket_startToFinish() {
+    // 4 teams (8 players), 2 rounds
+    // Setup
+    var teams = new HashMap<String, List<String>>();
+    for (int i = 0; i < randomPlayers.size() / 2 - 2; i += 2) {
+      teams.put("Team " + i, List.of(randomPlayers.get(i).getId(), randomPlayers.get(i + 1).getId()));
+    }
+    teams.put("The GOATs", List.of(playerNameToPlayer.get("Reed").getId(), playerNameToPlayer.get("Zach").getId()));
+    var bracketReq = CreateBracketRequest.builder().teams(teams).gameType(GameType.SMASH_ULTIMATE_DOUBLES).build();
+
+    // Act
+    Comparator<PlayerSet> reedWins = (team1, team2) -> {
+      if (team1.getName().equals("The GOATs")) {
+        return -1;
+      } else if (team2.getName().equals("The GOATs")) {
+        return 1;
+      } else {
+        return -1;
+      }
+    };
+
+    // Act
+    var bracket = bracketController.postBracket(bracketReq);
+    var gameOne = bracket.getGameSets().get(0).get(0);
+    completeGameSet(
+      bracket.getId(),
+      gameOne,
+      gameOne.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+    var gameTwo = bracket.getGameSets().get(0).get(1);
+    completeGameSet(
+      bracket.getId(),
+      gameTwo,
+      gameTwo.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+    var finals = gameSetRepository.findById(bracket.getGameSets().get(1).get(0).getId()).get();
+    completeGameSet(
+      bracket.getId(),
+      finals,
+      finals.getPlayers().stream().sorted(reedWins).map(PlayerSet::getId).toList()
+    );
+
+    bracketController.completeBracket(bracket.getId());
+
+    // Verify
+    var completedBracket = Bracket.loadLazyBracket(bracketRepository.findById(bracket.getId()).get());
+    // Assert bracket winners are set and are the same as the winners of the final game set
+    Assertions.assertEquals(2, completedBracket.getWinners().size());
+    var winnerIds = completedBracket.getWinners().stream().map(Player::getId).collect(Collectors.toSet());
+    Assertions.assertTrue(winnerIds.contains(playerNameToPlayer.get("Reed").getId()));
+    Assertions.assertTrue(winnerIds.contains(playerNameToPlayer.get("Zach").getId()));
+  }
+
   private void completeGameSet(String bracketId, GameSet gameSet) {
     var winningOrder = gameSet.getPlayers().stream().map(PlayerSet::getId).sorted().toList();
+    completeGameSet(bracketId, gameSet, winningOrder);
+  }
+
+  private void completeGameSet(String bracketId, GameSet gameSet, List<String> winningOrder) {
+    completeGameSet(bracketId, gameSet, winningOrder, 1);
+  }
+
+  private void completeGameSet(String bracketId, GameSet gameSet, List<String> winningOrder, int winnerCount) {
     var req = CompleteGameSetRequest.builder()
       .games(List.of(winningOrder))
       .forfeit(false)
-      .winners(winningOrder.subList(0, 1))
+      .winners(winningOrder.subList(0, winnerCount))
       .build();
     bracketController.completeGameSet(bracketId, gameSet.getId(), req);
   }
@@ -779,7 +1431,6 @@ public class BracketControllerTest extends BaseSpringTest {
   }
 
   private ApiBracket createBracketWithRandomPlayers(GameType gameType) {
-    // Setup
     var bracketReq = CreateBracketRequest.builder()
       .teams(randomPlayers.stream().collect(Collectors.toMap(Player::getId, player -> List.of(player.getId()))))
       .gameType(gameType)
