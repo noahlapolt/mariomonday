@@ -1,7 +1,10 @@
 package mariomonday.backend.apis;
 
+import com.mongodb.ClientSessionOptions;
+import com.mongodb.client.ClientSession;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,12 +26,15 @@ import mariomonday.backend.database.tables.BracketRepository;
 import mariomonday.backend.database.tables.GameRepository;
 import mariomonday.backend.database.tables.GameSetRepository;
 import mariomonday.backend.database.tables.PlayerRepository;
+import mariomonday.backend.error.exceptions.AlreadyExistsException;
 import mariomonday.backend.error.exceptions.InvalidRequestException;
 import mariomonday.backend.error.exceptions.NotFoundException;
+import mariomonday.backend.managers.ratingcalculators.AbstractEloManager;
 import mariomonday.backend.managers.seeders.AbstractSeeder;
 import mariomonday.backend.managers.tournamentcreators.AbstractBracketCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,6 +60,12 @@ public class BracketController {
    */
   @Autowired
   AbstractSeeder seeder;
+
+  /**
+   * ELO algorithm to use
+   */
+  @Autowired
+  AbstractEloManager eloManager;
 
   /**
    * Bracket table
@@ -182,6 +194,9 @@ public class BracketController {
     @RequestBody CompleteGameSetRequest request
   ) {
     var bracket = bracketRepo.findById(bracketId).orElseThrow(() -> new NotFoundException("Bracket not found"));
+    if (!bracket.getWinners().isEmpty()) {
+      throw new InvalidRequestException("May not update a completed bracket!");
+    }
     var gameSet = gameSetRepo.findById(gameSetId).orElseThrow(() -> new NotFoundException("Game Set not found"));
     var previouslyCompleted = !gameSet.getWinners().isEmpty();
     if (previouslyCompleted) {
@@ -228,11 +243,12 @@ public class BracketController {
     if (request.getGames() == null) {
       throw new InvalidRequestException("Games list may not be null");
     }
-    if (!request.isForfeit() && request.getGames().isEmpty()) {
-      throw new InvalidRequestException("If set is not forfeit, games must be submitted.");
-    }
-    if (request.isForfeit() && !request.getGames().isEmpty()) {
-      throw new InvalidRequestException("If set is forfeit, games must be empty.");
+    if (request.isForfeit() || gameSet.isByeRound()) {
+      if (!request.getGames().isEmpty()) {
+        throw new InvalidRequestException("If set is forfeit or a bye round, games must be empty.");
+      }
+    } else if (request.getGames().isEmpty()) {
+      throw new InvalidRequestException("If set is not forfeit or a bye round, games must be submitted.");
     }
     var players = gameSet.getPlayers();
     var teamIdToPlayerSet = players.stream().collect(Collectors.toMap(PlayerSet::getId, playerSet -> playerSet));
@@ -270,5 +286,97 @@ public class BracketController {
     gameSet.setGames(new HashSet<>(gameRepo.saveAll(games)));
     gameSetRepo.save(gameSet);
     return ApiBracket.fromBracket(bracketRepo.findById(bracket.getId()).get());
+  }
+
+  /**
+   * Complete the given bracket, updating the ELO of all players accordingly.
+   * @param bracketId The ID of the bracket to complete
+   */
+  @PostMapping("/bracket/{bracketId}/complete")
+  public void completeBracket(@PathVariable String bracketId) {
+    var bracket = bracketRepo.findById(bracketId).orElseThrow(() -> new NotFoundException("Bracket not found"));
+    if (bracket.getFinalGameSet().getWinners().isEmpty()) {
+      throw new InvalidRequestException("Cannot complete bracket until final game set is completed!");
+    }
+    if (!bracket.getWinners().isEmpty()) {
+      throw new InvalidRequestException("Bracket is already completed!");
+    }
+    if (bracket.getFinalGameSet().getWinners().size() != 1) {
+      throw new InvalidRequestException("Multiple teams cannot win a bracket!");
+    }
+    // Convert to API bracket to make traversal easier for ELO updating
+    // Order is relevant for ELO calculations,
+    // so we need to make sure to go round by round when updating
+    var apiBracket = ApiBracket.fromBracket(bracket);
+    for (var round : apiBracket.getGameSets()) {
+      var roundEloChange = bracket.getTeams().stream().collect(Collectors.toMap(team -> team, team -> 0));
+      var idToPlayerSet = bracket.getTeams().stream().collect(Collectors.toMap(PlayerSet::getId, ps -> ps));
+      round.forEach(gameSet -> {
+        var games = gameSet.getGames();
+        // If games is empty, it was a forfeit and we do not update ELO.
+        // This is a meritocracy, no freeloaders
+        // Also, don't award anything on a bye round. OBVIOUSLY.
+        if (!games.isEmpty() && !gameSet.isByeRound()) {
+          eloManager
+            .calculateEloChange(
+              games
+                .stream()
+                .map(game ->
+                  // There are multiple Java objects for the same DB entry.
+                  // Since we are doing a bunch of modifications to the Java objects
+                  // before pushing to DB, we need to make sure
+                  // we keep referencing the same objects, so we get them from this map
+                  game
+                    .getPlayerSets()
+                    .stream()
+                    .map(gps -> idToPlayerSet.get(gps.getId()))
+                    .toList()
+                )
+                .toList(),
+              bracket.getGameType()
+            )
+            .forEach((team, elo) -> roundEloChange.put(team, roundEloChange.get(team) + elo));
+        }
+      });
+      // We must update the player objects ELO after each round
+      // so that the next round takes into account the player's new ELO
+      bracket
+        .getTeams()
+        .forEach(team ->
+          team
+            .getPlayers()
+            .forEach(player -> {
+              var eloMap = player.getEloMap();
+              // Divide the points evenly between the team
+              var eloChange = roundEloChange.get(team) / team.getPlayers().size();
+              eloMap.put(bracket.getGameType(), eloMap.get(bracket.getGameType()) + eloChange);
+            })
+        );
+    }
+    // All ELO calcs have been done, now apply them to the database transactionally
+    applyBracketCompletion(
+      bracketId,
+      bracket.getFinalGameSet().getWinners().stream().findFirst().get(),
+      bracket.getTeams()
+    );
+  }
+
+  /**
+   * Apply the necessary database updates that are required
+   * when completing a bracket, transactionally.
+   * @param bracketId The bracket ID to complete
+   * @param playerSets The teams in the bracket, all with updated ELO.
+   */
+  @Transactional
+  private void applyBracketCompletion(String bracketId, PlayerSet winners, Set<PlayerSet> playerSets) {
+    var bracket = bracketRepo
+      .findById(bracketId)
+      .orElseThrow(() -> new NotFoundException("Bracket was deleted by another process while updating."));
+    if (!bracket.getWinners().isEmpty()) {
+      throw new InvalidRequestException("Bracket was completed by another process while updating.");
+    }
+    bracket.setWinners(winners.getPlayers());
+    bracketRepo.save(bracket);
+    playerSets.forEach(team -> playerRepo.saveAll(team.getPlayers()));
   }
 }

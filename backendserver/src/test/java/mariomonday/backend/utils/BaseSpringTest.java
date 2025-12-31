@@ -1,5 +1,6 @@
 package mariomonday.backend.utils;
 
+import java.time.Clock;
 import mariomonday.backend.apis.BracketController;
 import mariomonday.backend.database.tables.BracketRepository;
 import mariomonday.backend.database.tables.GameRepository;
@@ -26,6 +27,9 @@ public class BaseSpringTest {
 
   @Autowired
   protected BracketController bracketController;
+
+  @Autowired
+  protected Clock clock;
 
   @AfterEach
   public void cleanUp() {
