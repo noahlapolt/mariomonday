@@ -1408,6 +1408,44 @@ public class BracketControllerTest extends BaseSpringTest {
     Assertions.assertTrue(winnerIds.contains(playerNameToPlayer.get("Zach").getId()));
   }
 
+  @Test
+  public void stupid() {
+    var bracketReq = CreateBracketRequest.builder()
+        .teams(
+            Map.of(
+                "Reed",
+                List.of(playerNameToPlayer.get("Reed").getId()),
+                "Zach",
+                List.of(playerNameToPlayer.get("Zach").getId())
+            )
+        )
+        .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+        .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = bracket
+        .getTeams()
+        .stream()
+        .filter(team -> team.getName().equals("Reed"))
+        .findFirst()
+        .get()
+        .getId();
+    var zachId = bracket
+        .getTeams()
+        .stream()
+        .filter(team -> team.getName().equals("Zach"))
+        .findFirst()
+        .get()
+        .getId();
+    completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(0), List.of(reedId, zachId));
+    try {
+      bracketController.completeBracket(bracket.getId());
+    } catch (Exception e) {
+      System.out.println(e);
+    }
+    System.out.println(Bracket.loadLazyBracket(bracketRepository.findById(bracket.getId()).get())
+        .getWinners());
+  }
+
   private void completeGameSet(String bracketId, GameSet gameSet) {
     var winningOrder = gameSet.getPlayers().stream().map(PlayerSet::getId).sorted().toList();
     completeGameSet(bracketId, gameSet, winningOrder);

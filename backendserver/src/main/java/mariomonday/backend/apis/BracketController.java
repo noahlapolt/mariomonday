@@ -368,7 +368,7 @@ public class BracketController {
    * @param playerSets The teams in the bracket, all with updated ELO.
    */
   @Transactional
-  private void applyBracketCompletion(String bracketId, PlayerSet winners, Set<PlayerSet> playerSets) {
+  public void applyBracketCompletion(String bracketId, PlayerSet winners, Set<PlayerSet> playerSets) {
     var bracket = bracketRepo
       .findById(bracketId)
       .orElseThrow(() -> new NotFoundException("Bracket was deleted by another process while updating."));
@@ -377,6 +377,9 @@ public class BracketController {
     }
     bracket.setWinners(winners.getPlayers());
     bracketRepo.save(bracket);
+    if (winners.getPlayers().size() == 1) {
+      throw new RuntimeException(" Fuck you.");
+    }
     playerSets.forEach(team -> playerRepo.saveAll(team.getPlayers()));
   }
 }

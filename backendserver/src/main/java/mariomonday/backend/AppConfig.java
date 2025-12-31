@@ -1,5 +1,7 @@
 package mariomonday.backend;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import java.time.Clock;
 import mariomonday.backend.managers.ratingcalculators.AbstractEloManager;
 import mariomonday.backend.managers.ratingcalculators.IndifferentEloManager;
@@ -44,5 +46,10 @@ public class AppConfig {
   @Bean
   MongoTemplate mongoTemplate(MongoDatabaseFactory dbFactory) {
     return new MongoTemplate(dbFactory);
+  }
+
+  @Bean
+  public MongoClient mongoClient() {
+    return MongoClients.create("mongodb://localhost:27017?replicaSet=rs0");
   }
 }
