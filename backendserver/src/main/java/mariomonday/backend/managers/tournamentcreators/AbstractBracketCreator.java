@@ -9,6 +9,10 @@ public abstract class AbstractBracketCreator {
 
   /**
    * Create a bracket from a list of player IDs
+   * NOTE: The game sets created by this function MUST have IDs. If they do not,
+   * insertion becomes a nightmare since each game set will not know
+   * what its previous game sets are after insertion
+   * since it was purely dependent on object references rather than the ID
    *
    * @param gameType   the game type
    * @param playerSets the player sets in seeded order (0 index is highest seed)

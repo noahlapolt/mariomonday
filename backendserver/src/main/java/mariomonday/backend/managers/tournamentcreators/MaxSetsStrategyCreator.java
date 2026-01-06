@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import java.time.Clock;
 import java.util.List;
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
 import mariomonday.backend.database.schema.Bracket;
@@ -18,7 +19,7 @@ public class MaxSetsStrategyCreator extends AbstractBracketCreator {
 
   private final Clock clock;
 
-  MaxSetsStrategyCreator(@Autowired Clock clock) {
+  public MaxSetsStrategyCreator(@Autowired Clock clock) {
     this.clock = clock;
   }
 
@@ -31,8 +32,8 @@ public class MaxSetsStrategyCreator extends AbstractBracketCreator {
     int maxRound = getMaxRound(minGamesNecessary, gameType);
 
     Bracket.BracketBuilder bracketBuilder = Bracket.builder()
-      .players(playerSets)
-      .rounds(maxRound)
+      .teams(playerSets)
+      .rounds(maxRound + 1)
       .date(clock.instant())
       .gameType(gameType);
 
@@ -99,6 +100,7 @@ public class MaxSetsStrategyCreator extends AbstractBracketCreator {
           .map(gops -> gops.playerSet)
           .collect(ImmutableList.toImmutableList())
       )
+      .id(UUID.randomUUID().toString())
       .build();
   }
 

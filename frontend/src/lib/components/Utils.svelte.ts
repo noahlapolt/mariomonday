@@ -22,6 +22,8 @@ export const GameTypes: Record<string, GameType> = {
     },
 };
 
-export const globalStates = $state({
+export const globalStates: {
+    login: boolean;
+} = $state({
     login: false,
 });

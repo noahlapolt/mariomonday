@@ -1,19 +1,19 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import PlayerInfo from "./PlayerInfo.svelte";
+  import PlayerRender from "./PlayerRender.svelte";
   import { GameTypes } from "./Utils.svelte";
   import EditableText from "./EditableText.svelte";
 
   let {
-    team,
+    playerSet,
     gameType,
-    editable,
+    editable = false,
     add,
     remove,
     removePlayer,
     children,
   }: {
-    team: PlayerSet;
+    playerSet: PlayerSet;
     gameType: string;
     editable?: boolean;
     add?: () => void;
@@ -21,45 +21,44 @@
     removePlayer?: (player: Player) => void;
     children?: Snippet;
   } = $props();
+
+  const calcHeight = () => {
+    return GameTypes[gameType].playersOnATeam > 1
+      ? GameTypes[gameType].playersOnATeam * 40 + 30
+      : Math.max(playerSet.players.length * 40, 40);
+  };
 </script>
 
-<div class={GameTypes[gameType].playersOnATeam > 1 ? "team" : ""}>
+<div class="team" style={`height: ${calcHeight()}px`}>
   {#if GameTypes[gameType].playersOnATeam > 1}
-    {#if editable}
+    <div class="teamName">
       <EditableText
         label="Team Name: "
-        placeholder={team.name}
+        placeholder={playerSet.name}
+        {editable}
         onSave={(text) => {
-          team.name = text;
+          playerSet.name = text;
         }}
       />
-    {:else}
-      <label
-        >Team Name: <input
-          class="teamName"
-          placeholder={team.name}
-          type="text"
-        /></label
-      >
-    {/if}
+    </div>
   {/if}
-  {#each team.players as player, index}
-    <PlayerInfo
+  {#each playerSet.players as player, index}
+    <PlayerRender
       {player}
       {gameType}
       {editable}
       remove={remove !== undefined
         ? (player) => {
-            team.players.splice(index, 1);
+            playerSet.players.splice(index, 1);
             if (removePlayer) removePlayer(player);
-            if (team.players.length === 0) remove(team);
+            if (playerSet.players.length === 0) remove(playerSet);
           }
         : undefined}
     >
-      {@render children?.()}</PlayerInfo
-    >
+      {@render children?.()}
+    </PlayerRender>
   {/each}
-  {#if team.players.length < GameTypes[gameType].playersOnATeam}
+  {#each { length: GameTypes[gameType].playersOnATeam - playerSet.players.length }}
     <button
       class="teamAdd"
       aria-label="add player to a team"
@@ -76,7 +75,7 @@
         />
       </svg>
     </button>
-  {/if}
+  {/each}
 </div>
 
 <style>
@@ -84,23 +83,19 @@
     display: flex;
     flex-direction: column;
     text-align: center;
-    border: 1px dashed var(--second);
     border-radius: 0.5rem;
-    margin: 0.5rem;
-    padding: 0.5rem 0;
   }
 
   .teamName {
-    background-color: var(--prime);
-    color: var(--text-prime);
-    border: none;
-  }
-
-  .teamName:focus {
-    outline: 1px solid var(--second);
+    display: flex;
+    align-items: center;
+    height: 30px;
   }
 
   .teamAdd {
-    margin: 0.45rem 0.5rem;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    flex-grow: 1;
   }
 </style>

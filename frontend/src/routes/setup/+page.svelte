@@ -1,6 +1,6 @@
 <script lang="ts">
   import Search from "$lib/components/Search.svelte";
-  import TeamInfo from "$lib/components/TeamInfo.svelte";
+  import PlayerSetRender from "$lib/components/PlayerSetRender.svelte";
   import { PUBLIC_API_URL } from "$env/static/public";
   import { onMount } from "svelte";
   import { GameTypes, globalStates } from "$lib/components/Utils.svelte";
@@ -22,6 +22,7 @@
     const Players_INIT: RequestInit = {
       method: "GET",
     };
+    document.cookie = `info={"playingTeams": [], "playerCount": 0}`;
     fetch(`${PUBLIC_API_URL}/player`, Players_INIT)
       .then((response) => response.json())
       .then((data: Player[]) => {
@@ -72,9 +73,13 @@
       // less than 4 results
       if (
         players[index].name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        playingTeams.find(({ players }) =>
-          players.find((player) => player === players[index]),
-        ) === undefined
+        playingTeams.filter((playingTeam) => {
+          return (
+            playingTeam.players.filter(({ id }) => {
+              return id === players[index].id;
+            }).length !== 0
+          );
+        }).length === 0
       ) {
         playerOptions.push(players[index]);
         found++;
@@ -93,8 +98,8 @@
       GameTypes[gameType].playersOnATeam === 1
     ) {
       selectedTeam = {
-        id: "",
-        name: "New Team",
+        id: player.id,
+        name: `Team ${player.id}`,
         players: [player],
       };
 
@@ -113,7 +118,6 @@
    */
   const createPlayer = () => {
     const newPlayer = {
-      id: `id-${Math.random() * 1000}`,
       name: searchTerm,
       eloMap: {},
     };
@@ -126,9 +130,43 @@
     };
     fetch(`${PUBLIC_API_URL}/player`, player_INIT).then((response) => {
       if (response.status === 200) {
-        addPlayer(newPlayer);
         searchTerm = "";
-      } else if (response.status === 403) globalStates.login = true;
+        response.json().then((data) => {
+          addPlayer(data);
+        });
+      } else if (response.status === 403) {
+        globalStates.login = true;
+      }
+    });
+  };
+
+  /**
+   * Creates the bracket and sends the user to the current bracket.
+   */
+  const createBracket = () => {
+    // Builds the teams as expected by the server.
+    const teams: Record<string, string[]> = {};
+    playingTeams.forEach((playingTeam) => {
+      teams[playingTeam.name] = playingTeam.players.map(({ id }) => id);
+    });
+
+    // Builds the HTTP and creates the bracket.
+    const bracket_INIT: RequestInit = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        gameType: gameType,
+        teams: teams,
+      }),
+    };
+    fetch(`${PUBLIC_API_URL}/bracket`, bracket_INIT).then((response) => {
+      if (response.status === 403) globalStates.login = true;
+      if (response.status === 200)
+        response.json().then((data) => {
+          window.location.href = `/tournament?id=${data.id}`;
+        });
     });
   };
 </script>
@@ -150,14 +188,14 @@
     </Search>
     <div id="playing">
       <!--This is hella slow should be optimized. Sveltes weird array does not let reverse work-->
-      {#each Array.from(playingTeams).reverse() as team, index}
-        <TeamInfo
-          {team}
+      {#each Array.from(playingTeams).reverse() as playerSet, index}
+        <PlayerSetRender
+          {playerSet}
           {gameType}
           editable={true}
           add={() => {
             document.getElementById("search")?.focus();
-            selectedTeam = team;
+            selectedTeam = playerSet;
           }}
           remove={() => {
             playingTeams.splice(index, 1);
@@ -169,7 +207,7 @@
         />
       {/each}
     </div>
-    <button>
+    <button onclick={createBracket}>
       Start Tournament: {playerCount} player{playerCount === 1 ? "" : "s"}
     </button>
   </div>
@@ -190,7 +228,7 @@
     flex-grow: 1;
     justify-content: space-between;
     max-width: 40rem;
-    height: 100vh;
+    height: calc(100vh - 3rem);
   }
 
   #playing {

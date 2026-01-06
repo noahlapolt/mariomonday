@@ -1,28 +1,25 @@
+// TODO remove all IDs or something.
+
 type Bracket = {
-  id?: string;
+  id: string;
   date: Date;
-  rounds: number;
-  winners: Player[];
   gameType: string;
-  players: PlayerSet[];
-  gameSets: GameSet[];
-  finalGameSet: GameSet;
+  winners: PlayerSet[];
+  losers: PlayerSet[];
+  gameSets: GameSet[][];
 };
 
 type Game = {
-  id?: string;
+  id: string;
   winners: PlayerSet[];
   playerSets: PlayerSet[];
 };
 
 type GameSet = {
   id: string;
-  roundIndex: number;
+  playerSets: PlayerSet[];
   winners: PlayerSet[];
-  losers: PlayerSet[];
-  addedPlayerSets: PlayerSet[];
-  gameType: string;
-  previousGameSets: GameSet[];
+  previousGameSets: string[];
   games: Game[];
 };
 
@@ -33,13 +30,13 @@ type GameType = {
 };
 
 type Player = {
-  id?: string;
+  id: string;
   name: string;
   eloMap: Record<string, number>;
 };
 
 type PlayerSet = {
-  id?: string;
+  id: string;
   players: Player[];
   name: string;
 };

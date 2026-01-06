@@ -12,7 +12,8 @@ import mariomonday.backend.database.schema.PlayerSet;
 public class TestDataUtil {
 
   public static Player.PlayerBuilder createFakePlayer() {
-    return Player.builder().name("Big Dick Joe").id(UUID.randomUUID().toString());
+    var uuid = UUID.randomUUID().toString();
+    return Player.builder().name(uuid).eloMap(Player.generateStartingEloMap()).id(uuid);
   }
 
   public static GameSet.GameSetBuilder createFakeGameSet() {

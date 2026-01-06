@@ -1,10 +1,13 @@
 package mariomonday.backend.database.schema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
 import org.springframework.data.annotation.Id;
@@ -50,11 +53,10 @@ public class Bracket {
   private final GameType gameType;
 
   /**
-   * The players who participated in this bracket
+   * The teams who participated in this bracket. Teams can be a single player
    */
-  @DocumentReference(lazy = true)
   @Singular
-  private Set<PlayerSet> players;
+  private Set<PlayerSet> teams;
 
   /**
    * The sets in this bracket
@@ -63,11 +65,22 @@ public class Bracket {
   @Singular
   private Set<GameSet> gameSets;
 
+  @JsonIgnore
   public GameSet getFinalGameSet() {
     return gameSets
       .stream()
       .filter(gs -> gs.getRoundIndex() == 0)
       .findFirst()
       .orElse(null);
+  }
+
+  public static Bracket loadLazyBracket(Bracket bracket) {
+    try {
+      var objectMapper = new ObjectMapper();
+      objectMapper.registerModule(new JavaTimeModule());
+      return objectMapper.readValue(objectMapper.writeValueAsString(bracket), Bracket.class);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException("Failed to load lazy bracket. This should never happen");
+    }
   }
 }

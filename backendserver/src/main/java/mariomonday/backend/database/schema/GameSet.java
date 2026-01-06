@@ -1,11 +1,11 @@
 package mariomonday.backend.database.schema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NonNull;
 import lombok.Singular;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -17,31 +17,32 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 @Data
 @Builder
 @Document
-public class GameSet {
+public class GameSet implements Comparable<GameSet> {
 
   @Id
   private final String id;
 
+  /**
+   * The round this game set is a part of. Round "0" is the final round,
+   * round "1" is the semi finals, etc.
+   */
   private final Integer roundIndex;
 
   /**
    * The winners of the set
    */
-  @DocumentReference(lazy = true)
   @Singular
   private Set<PlayerSet> winners;
 
   /**
    * The losers of the set
    */
-  @DocumentReference(lazy = true)
   @Singular
   private Set<PlayerSet> losers;
 
   /**
    * The playerSets added to this set not from previous games
    */
-  @DocumentReference(lazy = true)
   @Singular
   private Set<PlayerSet> addedPlayerSets;
 
@@ -52,20 +53,26 @@ public class GameSet {
 
   @DocumentReference(lazy = true)
   @Singular
-  private final Set<GameSet> previousGameSets;
+  private Set<GameSet> previousGameSets;
 
+  /**
+   * Games within this set. If this is empty, but the set has winners, that is a forfeit.
+   */
   @DocumentReference(lazy = true)
   @Singular
-  private List<Game> games;
+  private Set<Game> games;
 
+  @JsonIgnore
   public int getNumEmptySlots() {
     return Math.max(0, gameType.getMaxPlayerSets() - getTotalPlayers());
   }
 
+  @JsonIgnore
   public boolean isByeRound() {
     return gameType.getPlayerSetsToMoveOn() >= getTotalPlayers();
   }
 
+  @JsonIgnore
   public Set<PlayerSet> getPlayerSetsFromPreviousGames() {
     ImmutableSet.Builder<PlayerSet> setBuilder = ImmutableSet.builder();
 
@@ -74,14 +81,25 @@ public class GameSet {
     return setBuilder.build();
   }
 
+  @JsonIgnore
+  public Set<PlayerSet> getPlayers() {
+    var players = new HashSet<PlayerSet>();
+    players.addAll(getPlayerSetsFromPreviousGames());
+    players.addAll(addedPlayerSets);
+    return players;
+  }
+
+  @JsonIgnore
   public int getTotalPlayers() {
     return getNumPlayersFromPreviousGames() + addedPlayerSets.size();
   }
 
+  @JsonIgnore
   public int getNumPlayersFromPreviousGames() {
     return previousGameSets.stream().mapToInt(GameSet::getExpectedPlayersMovingOn).sum();
   }
 
+  @JsonIgnore
   public int getExpectedPlayersMovingOn() {
     if (winners.isEmpty()) {
       return Math.min(getTotalPlayers(), gameType.getPlayerSetsToMoveOn());
@@ -90,7 +108,16 @@ public class GameSet {
     }
   }
 
+  @JsonIgnore
   public boolean isValidGameSet() {
     return getTotalPlayers() <= gameType.getMaxPlayerSets();
+  }
+
+  /**
+   * Sort by ID. Not an important metric, but makes sorting consistent.
+   */
+  @Override
+  public int compareTo(GameSet other) {
+    return this.getId().compareTo(other.getId());
   }
 }
