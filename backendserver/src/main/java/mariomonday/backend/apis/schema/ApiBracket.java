@@ -1,19 +1,16 @@
 package mariomonday.backend.apis.schema;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import mariomonday.backend.database.schema.Bracket;
-import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.Player;
 import mariomonday.backend.database.schema.PlayerSet;
@@ -62,7 +59,7 @@ public class ApiBracket {
    * The sets in this bracket, as a list of sets.
    * The first list is all game sets in round one, the second all game sets in round two, etc.
    */
-  private List<List<GameSet>> gameSets;
+  private List<List<ApiGameSet>> gameSets;
 
   public static ApiBracket fromBracket(Bracket bracket) {
     var loadedBracket = Bracket.loadLazyBracket(bracket);
@@ -73,7 +70,9 @@ public class ApiBracket {
       .winners(loadedBracket.getWinners())
       .gameType(loadedBracket.getGameType())
       .teams(loadedBracket.getTeams())
-      .gameSets(orderGameSets(loadedBracket.getGameSets()))
+      .gameSets(
+        orderGameSets(loadedBracket.getGameSets().stream().map(ApiGameSet::fromGameSet).collect(Collectors.toSet()))
+      )
       .build();
   }
 
@@ -81,28 +80,50 @@ public class ApiBracket {
    * Order the game sets in a consistent manner as described in
    * {@link mariomonday.backend.apis.schema.ApiBracket#gameSets gameSets}
    */
-  private static List<List<GameSet>> orderGameSets(Set<GameSet> gameSets) {
-    return groupGameSetsByRound(gameSets)
-      .entrySet()
-      .stream()
-      .sorted(Entry.comparingByKey(Comparator.reverseOrder()))
-      .map(Entry::getValue)
-      .map(sets -> sets.stream().sorted().toList())
-      .toList();
+  private static List<List<ApiGameSet>> orderGameSets(Set<ApiGameSet> gameSets) {
+    var gameSetsByRound = groupGameSetsByRound(gameSets);
+    var result = new ArrayList<List<ApiGameSet>>();
+    // Round index 0 will always only have one game, so we add it first
+    result.add(List.of(gameSetsByRound.get(0).get(0)));
+    for (int i = 1; i < gameSetsByRound.size(); i++) {
+      var currRoundResult = new ArrayList<ApiGameSet>();
+      result.add(currRoundResult);
+      var currRound = gameSetsByRound.get(i);
+      var nextRound = gameSetsByRound.get(i - 1);
+      for (int j = 0; j < nextRound.size(); j++) {
+        var nextRoundGame = nextRound.get(j);
+        for (int k = 0; k < nextRoundGame.getPreviousGameSets().size(); k++) {
+          var gsToFind = nextRoundGame.getPreviousGameSets().get(k);
+          currRoundResult.add(
+            currRound
+              .stream()
+              .filter(gs -> gs.getId().equals(gsToFind))
+              .findFirst()
+              .orElseThrow(() -> new RuntimeException("This should never happen"))
+          );
+        }
+      }
+    }
+    Collections.reverse(result);
+    return result;
   }
 
   /**
-   * Group game sets by round index in a map
+   * Group game sets by round index, with each round being unordered
    */
-  private static Map<Integer, List<GameSet>> groupGameSetsByRound(Set<GameSet> gameSets) {
-    var result = new HashMap<Integer, List<GameSet>>();
-    for (GameSet gameSet : gameSets) {
+  private static List<List<ApiGameSet>> groupGameSetsByRound(Set<ApiGameSet> gameSets) {
+    var result = new HashMap<Integer, List<ApiGameSet>>();
+    for (ApiGameSet gameSet : gameSets) {
       int round = gameSet.getRoundIndex();
       if (!result.containsKey(round)) {
         result.put(round, new ArrayList<>());
       }
       result.get(round).add(gameSet);
     }
-    return result;
+    return result
+      .values()
+      .stream()
+      .map(round -> round.stream().sorted().toList())
+      .toList();
   }
 }
