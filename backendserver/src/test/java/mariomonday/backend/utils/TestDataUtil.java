@@ -1,5 +1,6 @@
 package mariomonday.backend.utils;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -12,8 +13,11 @@ import mariomonday.backend.database.schema.PlayerSet;
 public class TestDataUtil {
 
   public static Player.PlayerBuilder createFakePlayer() {
-    var uuid = UUID.randomUUID().toString();
-    return Player.builder().name(uuid).eloMap(Player.generateStartingEloMap()).id(uuid);
+    return createFakePlayer(UUID.randomUUID().toString());
+  }
+
+  public static Player.PlayerBuilder createFakePlayer(String name) {
+    return Player.builder().name(name).eloMap(Player.generateStartingEloMap()).id(name);
   }
 
   public static GameSet.GameSetBuilder createFakeGameSet() {
@@ -21,20 +25,21 @@ public class TestDataUtil {
   }
 
   public static PlayerSet.PlayerSetBuilder createFakePlayerSet() {
-    return PlayerSet.builder()
-      .players(Set.of(createFakePlayer().build()))
-      .name("Yo, you seen this guy?")
-      .id(UUID.randomUUID().toString());
+    return createFakePlayerSet("Yo, you seen this guy?");
+  }
+
+  public static PlayerSet.PlayerSetBuilder createFakePlayerSet(String name) {
+    return PlayerSet.builder().players(Set.of(createFakePlayer(name).build())).name(name).id(name);
   }
 
   public static Game.GameBuilder createFakeGame() {
     return Game.builder().id(UUID.randomUUID().toString());
   }
 
-  public static Set<PlayerSet> createNFakePlayers(int numberOfPlayers) {
+  public static List<PlayerSet> createNFakePlayers(int numberOfPlayers) {
     return IntStream.range(0, numberOfPlayers)
       .boxed()
-      .map(num -> createFakePlayerSet().id(String.valueOf(num)).build())
-      .collect(Collectors.toSet());
+      .map(num -> createFakePlayerSet("Player " + num).id(String.valueOf(num)).build())
+      .toList();
   }
 }

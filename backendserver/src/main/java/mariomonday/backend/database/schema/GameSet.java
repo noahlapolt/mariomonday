@@ -20,13 +20,13 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 public class GameSet implements Comparable<GameSet> {
 
   @Id
-  private final String id;
+  private String id;
 
   /**
    * The round this game set is a part of. Round "0" is the final round,
    * round "1" is the semi finals, etc.
    */
-  private final Integer roundIndex;
+  private Integer roundIndex;
 
   /**
    * The winners of the set

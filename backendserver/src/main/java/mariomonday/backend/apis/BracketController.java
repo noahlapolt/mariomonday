@@ -313,10 +313,9 @@ public class BracketController {
       var idToPlayerSet = bracket.getTeams().stream().collect(Collectors.toMap(PlayerSet::getId, ps -> ps));
       round.forEach(gameSet -> {
         var games = gameSet.getGames();
-        // If games is empty, it was a forfeit and we do not update ELO.
+        // If games is empty, it was a forfeit or bye round and we do not update ELO.
         // This is a meritocracy, no freeloaders
-        // Also, don't award anything on a bye round. OBVIOUSLY.
-        if (!games.isEmpty() && !gameSet.isByeRound()) {
+        if (!games.isEmpty()) {
           eloManager
             .calculateEloChange(
               games
