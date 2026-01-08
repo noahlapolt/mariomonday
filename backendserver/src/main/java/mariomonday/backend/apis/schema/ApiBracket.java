@@ -58,6 +58,21 @@ public class ApiBracket {
   /**
    * The sets in this bracket, as a list of sets.
    * The first list is all game sets in round one, the second all game sets in round two, etc.
+   * Within each round, game sets are ordered by their next game set. See below:
+   * 1---|
+   *     |-- 5 ---|
+   * 2---|        |
+   *              |-- 7
+   * 3---|        |
+   *     |-- 6 ---|
+   * 4---|
+   * In round two game 5 comes first,
+   * so in round one games 1 and 2 will come first because they feed into game 5.
+   * The ordering of games that share their next game set
+   * is decided by the order of the "previousGameSets" field for the next game set.
+   * In this example, 5 has 1 at index 0 in the "previousGameSet" list, so game 1 comes before game 2.
+   * For this reason, the "previousGameSet" field is a List in the ApiGameSet object sorted by ID,
+   * even though it is a set in the backend.
    */
   private List<List<ApiGameSet>> gameSets;
 
@@ -89,7 +104,8 @@ public class ApiBracket {
       var currRoundResult = new ArrayList<ApiGameSet>();
       result.add(currRoundResult);
       var currRound = gameSetsByRound.get(i);
-      var nextRound = gameSetsByRound.get(i - 1);
+      // Make sure to take the sorted version of the next round from the result list
+      var nextRound = result.get(i - 1);
       for (int j = 0; j < nextRound.size(); j++) {
         var nextRoundGame = nextRound.get(j);
         for (int k = 0; k < nextRoundGame.getPreviousGameSets().size(); k++) {
@@ -120,10 +136,6 @@ public class ApiBracket {
       }
       result.get(round).add(gameSet);
     }
-    return result
-      .values()
-      .stream()
-      .map(round -> round.stream().sorted().toList())
-      .toList();
+    return result.values().stream().toList();
   }
 }
