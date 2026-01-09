@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import GameSetRender from "./GameSetRender.svelte";
   import NewPlayerSet from "./NewPlayerSet.svelte";
   import RandomSelect from "./RandomSelect.svelte";
   import { GameTypes } from "./Utils.svelte";
+  import { SvelteMap } from "svelte/reactivity";
 
   let {
     bracket,
@@ -12,7 +14,6 @@
 
   let reviveSet: GameSet | undefined = $state();
   let newPlayerSet: PlayerSet | undefined = $state();
-  console.log(bracket);
 
   // Get some important round info.
   let gameSetCount = 0;
@@ -37,6 +38,17 @@
 
     return foundRoundIndex;
   });
+  let playerSetMap: SvelteMap<string, PlayerSet> = $derived.by(() => {
+    const map = new SvelteMap<string, PlayerSet>();
+
+    // Makes a map of the teams for quicker refrence.
+    // TODO: Ask for the backend to send it like this.
+    bracket.teams.forEach((team) => {
+      map.set(team.id, team);
+    });
+
+    return map;
+  });
 
   const gameInfo = GameTypes[bracket.gameType];
   const maxPrevGames = gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn;
@@ -55,24 +67,30 @@
     // Get all of the players.
     let totalWinsPerSet = new Map<
       string,
-      { wins: number; playerSet: PlayerSet }
+      { wins: number; playerSetId: string }
     >();
-    gameSet.playerSets.forEach((playerSet) => {
-      totalWinsPerSet.set(playerSet.id, { wins: 0, playerSet: playerSet });
+    gameSet.playerSets.forEach((playerSetId) => {
+      let playerSet = playerSetMap.get(playerSetId);
+      if (playerSet !== undefined) {
+        totalWinsPerSet.set(playerSet.id, {
+          wins: 0,
+          playerSetId: playerSetId,
+        });
+      }
     });
 
     // Count up the wins.
     gameSet.games.forEach((game) => {
       game.winners.forEach((winner) => {
-        let winCount = totalWinsPerSet.get(winner.id);
+        let winCount = totalWinsPerSet.get(winner);
         if (winCount !== undefined) {
-          totalWinsPerSet.set(winner.id, {
+          totalWinsPerSet.set(winner, {
             wins: winCount.wins + 1,
-            playerSet: winCount.playerSet,
+            playerSetId: winCount.playerSetId,
           });
         } else {
           // This will should never run, but its here just in case.
-          totalWinsPerSet.set(winner.id, { wins: 1, playerSet: winner });
+          totalWinsPerSet.set(winner, { wins: 1, playerSetId: winner });
         }
       });
     });
@@ -88,11 +106,11 @@
       i < sortedWins.length && i < gameInfo.playerSetsToMoveOn;
       i++
     ) {
-      gameSet.winners.push(sortedWins[i][1].playerSet);
+      gameSet.winners.push(sortedWins[i][1].playerSetId);
     }
     // Adds the losers.
     for (let i = gameInfo.playerSetsToMoveOn; i < sortedWins.length; i++) {
-      bracket.losers.push(sortedWins[i][1].playerSet);
+      bracket.losers.push(sortedWins[i][1].playerSetId);
     }
 
     // Update any future options
@@ -110,12 +128,23 @@
 
     // TODO: Tell the server about the win duh.
   };
+
+  const getLosersPlayerSets = (): PlayerSet[] => {
+    const losersPlayerSets: PlayerSet[] = [];
+
+    bracket.losers.forEach((loser) => {
+      const playerSet = playerSetMap.get(loser);
+      if (playerSet !== undefined) losersPlayerSets.push(playerSet);
+    });
+
+    return losersPlayerSets;
+  };
 </script>
 
 {#if reviveSet !== undefined}
   <RandomSelect
     gameType={bracket.gameType}
-    pool={bracket.losers}
+    pool={getLosersPlayerSets()}
     onRevived={(revived) => {
       if (reviveSet !== undefined) {
         reviveSet.playerSets.push(revived);
@@ -149,7 +178,7 @@
         return `${capPrev} ${capCurr}`;
       })}
   </h1>
-  <b>{bracket.date.toDateString()}</b>
+  <b>{new Date(bracket.date).toDateString()}</b>
   <div class="rounds">
     {#each bracket.gameSets as gameSets, roundIndex}
       <div class="round">
@@ -165,6 +194,7 @@
                 gameType={bracket.gameType}
                 {gameSet}
                 disabled={currentRound !== roundIndex}
+                {playerSetMap}
                 onRevive={(gameSet) => {
                   reviveSet = gameSet;
                 }}
