@@ -11,7 +11,7 @@
     gameType: string;
     pool: PlayerSet[];
     onCancel: () => void;
-    onRevived: (playerSet: PlayerSet) => void;
+    onRevived: (playerSetId: string) => void;
   } = $props();
 
   // Vars to manage what is displayed.
@@ -27,7 +27,7 @@
    */
   const reset = () => {
     // Set winner and close.
-    onRevived(pool[highlighted]);
+    onRevived(pool[highlighted].id);
     pool.splice(highlighted, 1);
 
     // Reset vars.

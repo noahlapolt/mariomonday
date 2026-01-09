@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { SvelteMap } from "svelte/reactivity";
   import PlayerSetRender from "./PlayerSetRender.svelte";
   import { GameTypes } from "./Utils.svelte";
 
@@ -6,12 +7,14 @@
     gameType,
     gameSet,
     disabled,
+    playerSetMap,
     onRevive,
     onAddPlayerSet,
   }: {
     gameType: string;
     gameSet: GameSet;
     disabled: boolean;
+    playerSetMap: SvelteMap<string, PlayerSet>;
     onRevive: (gameSet: GameSet) => void;
     onAddPlayerSet: (playerSet: PlayerSet) => void;
   } = $props();
@@ -24,13 +27,12 @@
    * Adds a win to the current gameSet.
    * @param playerSet The player set that got the win.
    */
-  const addWin = (playerSet: PlayerSet) => {
+  const addWin = (playerSetId: string) => {
     gameSet.games.push({
       id: "",
       playerSets: gameSet.playerSets,
-      winners: [playerSet],
+      winners: [playerSetId],
     });
-
     // TODO Let the server know
   };
 
@@ -65,20 +67,20 @@
 </script>
 
 <div class="gameSet">
-  {#each gameSet.playerSets as playerSet, playerSetIndex}
+  {#each gameSet.playerSets as playerSetId, playerSetIndex}
     <div class="set">
       <button
         class="playerSet"
         disabled={disabled || gameSet.winners.length > 0}
         onclick={() => {
-          addWin(playerSet);
+          addWin(playerSetId);
         }}
       >
-        <PlayerSetRender {playerSet} {gameType} />
+        <PlayerSetRender playerSet={playerSetMap.get(playerSetId)} {gameType} />
         <div>
           {#each gameSet.games as game}
             {#each game.winners as winner}
-              {#if winner.id === playerSet.id}
+              {#if winner === playerSetId}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
                   <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
                   <path
@@ -89,7 +91,7 @@
             {/each}
           {/each}
           {#each gameSet.winners as winner}
-            {#if winner.id === playerSet.id}
+            {#if winner === playerSetId}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
                 <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
                 <path
