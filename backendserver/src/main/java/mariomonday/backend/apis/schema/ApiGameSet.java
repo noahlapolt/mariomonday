@@ -40,6 +40,12 @@ public class ApiGameSet implements Comparable<ApiGameSet> {
   private List<String> winners;
 
   /**
+   * The IDs of the losers of the set
+   */
+  @Singular
+  private List<String> losers;
+
+  /**
    * The IDs of the teams participating in this set
    */
   @Singular
@@ -65,6 +71,7 @@ public class ApiGameSet implements Comparable<ApiGameSet> {
     return ApiGameSet.builder()
       .id(gameSet.getId())
       .winners(gameSet.getWinners().stream().map(PlayerSet::getId).sorted().toList())
+      .losers(gameSet.getLosers().stream().map(PlayerSet::getId).sorted().toList())
       .roundIndex(gameSet.getRoundIndex())
       .playerSets(gameSet.getPlayers().stream().map(PlayerSet::getId).sorted().toList())
       .previousGameSets(gameSet.getPreviousGameSets().stream().map(GameSet::getId).sorted().toList())
