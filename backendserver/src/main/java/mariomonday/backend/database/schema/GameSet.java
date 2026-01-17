@@ -1,6 +1,9 @@
 package mariomonday.backend.database.schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.ImmutableSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -119,5 +122,15 @@ public class GameSet implements Comparable<GameSet> {
   @Override
   public int compareTo(GameSet other) {
     return this.getId().compareTo(other.getId());
+  }
+
+  public static GameSet loadLazyGameSet(GameSet gameSet) {
+    try {
+      var objectMapper = new ObjectMapper();
+      objectMapper.registerModule(new JavaTimeModule());
+      return objectMapper.readValue(objectMapper.writeValueAsString(gameSet), GameSet.class);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException("Failed to load lazy game set. This should never happen");
+    }
   }
 }
