@@ -1,37 +1,59 @@
 <script lang="ts">
+  import { SvelteSet, type SvelteMap } from "svelte/reactivity";
   import PlayerSetRender from "./PlayerSetRender.svelte";
-  import { GameTypes } from "./Utils.svelte";
+  import { GameTypes, globalStates } from "./Utils.svelte";
+  import { PUBLIC_API_URL } from "$env/static/public";
 
   let {
+    bracketId,
     gameType,
     gameSet,
     disabled,
+    playerSetMap,
     onRevive,
     onAddPlayerSet,
   }: {
+    bracketId: string;
     gameType: string;
     gameSet: GameSet;
     disabled: boolean;
+    playerSetMap: SvelteMap<string, PlayerSet>;
     onRevive: (gameSet: GameSet) => void;
     onAddPlayerSet: (playerSet: PlayerSet) => void;
   } = $props();
 
   const GAMEINFO = GameTypes[gameType];
   const PLAYERSETHEIGHT =
-    GAMEINFO.maxPlayerSets * 40 + (GAMEINFO.playersOnATeam > 1 ? 30 : 0);
+    GAMEINFO.playersOnATeam * 40 + (GAMEINFO.playersOnATeam > 1 ? 30 : 0);
+  let winners: Set<string> = $state(new SvelteSet());
 
   /**
    * Adds a win to the current gameSet.
-   * @param playerSet The player set that got the win.
    */
-  const addWin = (playerSet: PlayerSet) => {
-    gameSet.games.push({
-      id: "",
-      playerSets: gameSet.playerSets,
-      winners: [playerSet],
+  const addWin = () => {
+    let orderedPlayerSet: PlayerSet[] = [];
+
+    // Add winners.
+    winners.forEach((winner) => {
+      const playerSet = playerSetMap.get(winner);
+      if (playerSet !== undefined) orderedPlayerSet.push(playerSet);
     });
 
-    // TODO Let the server know
+    // Add losers
+    gameSet.playerSets.forEach((setId) => {
+      const playerSet = playerSetMap.get(setId);
+      if (!winners.has(setId) && playerSet !== undefined)
+        orderedPlayerSet.push(playerSet);
+    });
+
+    gameSet.games.push({
+      id: "",
+      gameType: gameType,
+      playerSets: orderedPlayerSet,
+    });
+
+    // Clean winners.
+    winners = new SvelteSet();
   };
 
   /**
@@ -39,9 +61,29 @@
    * @param playerSetIndex The index of the set to remove.
    */
   const surrender = (playerSetIndex: number) => {
-    gameSet.playerSets.splice(playerSetIndex, 1);
+    const forfeit_INIT: RequestInit = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        forfeit: true,
+        games: gameSet.games,
+        winners: gameSet.winners,
+      }),
+    };
 
-    // TODO Let the server know
+    fetch(
+      `${PUBLIC_API_URL}/bracket/${bracketId}/completeGameSet/${gameSet.id}`,
+      forfeit_INIT,
+    ).then((response) => {
+      if (response.status === 403) globalStates.login = true;
+      else if (response.status === 200) {
+        gameSet.playerSets.splice(playerSetIndex, 1);
+      } else {
+        response.text().then((error) => console.log(error));
+      }
+    });
   };
 
   /**
@@ -65,20 +107,23 @@
 </script>
 
 <div class="gameSet">
-  {#each gameSet.playerSets as playerSet, playerSetIndex}
+  {#each gameSet.playerSets as playerSetId, playerSetIndex}
     <div class="set">
       <button
         class="playerSet"
         disabled={disabled || gameSet.winners.length > 0}
         onclick={() => {
-          addWin(playerSet);
+          if (winners.size === GAMEINFO.playerSetsToMoveOn - 1) {
+            winners.add(playerSetId);
+            addWin();
+          } else winners.add(playerSetId);
         }}
       >
-        <PlayerSetRender {playerSet} {gameType} />
+        <PlayerSetRender playerSet={playerSetMap.get(playerSetId)} {gameType} />
         <div>
           {#each gameSet.games as game}
-            {#each game.winners as winner}
-              {#if winner.id === playerSet.id}
+            {#each { length: GAMEINFO.playerSetsToMoveOn }, winnerIndex}
+              {#if game.playerSets[winnerIndex].id === playerSetId}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
                   <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
                   <path
@@ -89,7 +134,7 @@
             {/each}
           {/each}
           {#each gameSet.winners as winner}
-            {#if winner.id === playerSet.id}
+            {#if winner === playerSetId}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
                 <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
                 <path
@@ -102,6 +147,7 @@
       </button>
       <button
         aria-label="Surrender"
+        disabled={disabled || gameSet.winners.length > 0}
         onclick={() => {
           surrender(playerSetIndex);
         }}
@@ -152,6 +198,8 @@
 <style>
   .gameSet {
     width: 20rem;
+    border-top: white 1px solid;
+    border-bottom: white 1px solid;
   }
 
   .set {

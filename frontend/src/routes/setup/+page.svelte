@@ -165,7 +165,7 @@
       if (response.status === 403) globalStates.login = true;
       if (response.status === 200)
         response.json().then((data) => {
-          window.location.href = `/tournament?id=${data.id}`;
+          window.location.href = `/tournament.html?id=${data.id}`;
         });
     });
   };

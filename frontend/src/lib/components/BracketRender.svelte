@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { PUBLIC_API_URL } from "$env/static/public";
   import GameSetRender from "./GameSetRender.svelte";
   import NewPlayerSet from "./NewPlayerSet.svelte";
   import RandomSelect from "./RandomSelect.svelte";
-  import { GameTypes } from "./Utils.svelte";
+  import { GameTypes, globalStates } from "./Utils.svelte";
+  import { SvelteMap } from "svelte/reactivity";
 
   let {
     bracket,
@@ -12,7 +14,6 @@
 
   let reviveSet: GameSet | undefined = $state();
   let newPlayerSet: PlayerSet | undefined = $state();
-  console.log(bracket);
 
   // Get some important round info.
   let gameSetCount = 0;
@@ -37,15 +38,27 @@
 
     return foundRoundIndex;
   });
+  let playerSetMap: SvelteMap<string, PlayerSet> = $derived.by(() => {
+    const map = new SvelteMap<string, PlayerSet>();
+
+    // Makes a map of the teams for quicker refrence.
+    // TODO: Ask for the backend to send it like this.
+    bracket.teams.forEach((team) => {
+      map.set(team.id, team);
+    });
+
+    return map;
+  });
 
   const gameInfo = GameTypes[bracket.gameType];
   const maxPrevGames = gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn;
   const playerSetHeight =
-    gameInfo.maxPlayerSets * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
+    gameInfo.playersOnATeam * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
   const gameSetsHeight =
     (playerSetHeight + 10) *
-    bracket.gameSets[0].length *
-    gameInfo.maxPlayerSets;
+      bracket.gameSets[0].length *
+      gameInfo.maxPlayerSets +
+    4;
 
   const resolveGameSet = (
     roundIndex: number,
@@ -55,26 +68,39 @@
     // Get all of the players.
     let totalWinsPerSet = new Map<
       string,
-      { wins: number; playerSet: PlayerSet }
+      { wins: number; playerSetId: string }
     >();
-    gameSet.playerSets.forEach((playerSet) => {
-      totalWinsPerSet.set(playerSet.id, { wins: 0, playerSet: playerSet });
+    gameSet.playerSets.forEach((playerSetId) => {
+      let playerSet = playerSetMap.get(playerSetId);
+      if (playerSet !== undefined) {
+        totalWinsPerSet.set(playerSet.id, {
+          wins: 0,
+          playerSetId: playerSetId,
+        });
+      }
     });
 
     // Count up the wins.
+    const games: string[][] = [];
     gameSet.games.forEach((game) => {
-      game.winners.forEach((winner) => {
-        let winCount = totalWinsPerSet.get(winner.id);
-        if (winCount !== undefined) {
-          totalWinsPerSet.set(winner.id, {
-            wins: winCount.wins + 1,
-            playerSet: winCount.playerSet,
-          });
-        } else {
-          // This will should never run, but its here just in case.
-          totalWinsPerSet.set(winner.id, { wins: 1, playerSet: winner });
+      game.playerSets.forEach((playerSet, index) => {
+        if (index < gameInfo.playerSetsToMoveOn) {
+          let winCount = totalWinsPerSet.get(playerSet.id);
+          if (winCount !== undefined) {
+            totalWinsPerSet.set(playerSet.id, {
+              wins: winCount.wins + 1,
+              playerSetId: winCount.playerSetId,
+            });
+          } else {
+            // This will should never run, but its here just in case.
+            totalWinsPerSet.set(playerSet.id, {
+              wins: 1,
+              playerSetId: playerSet.id,
+            });
+          }
         }
       });
+      games.push(game.playerSets.map((playerSet) => playerSet.id));
     });
 
     // Sort by most wins.
@@ -83,39 +109,80 @@
     );
 
     // Adds the winners.
+    const winners: string[] = [];
     for (
       let i = 0;
       i < sortedWins.length && i < gameInfo.playerSetsToMoveOn;
       i++
     ) {
-      gameSet.winners.push(sortedWins[i][1].playerSet);
-    }
-    // Adds the losers.
-    for (let i = gameInfo.playerSetsToMoveOn; i < sortedWins.length; i++) {
-      bracket.losers.push(sortedWins[i][1].playerSet);
+      winners.push(sortedWins[i][1].playerSetId);
     }
 
-    // Update any future options
-    if (roundIndex + 1 < bracket.gameSets.length) {
-      const nextRound = bracket.gameSets[roundIndex + 1];
-      const nextSetIndex = Math.floor(
-        gameSetIndex / (gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn),
-      );
-      if (nextSetIndex < nextRound.length) {
-        gameSet.winners.forEach((winner) => {
-          nextRound[nextSetIndex].playerSets.push(winner);
-        });
+    // Let the server know about the win.
+    const gameSet_INIT: RequestInit = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        forfeit: false,
+        games: games,
+        winners: winners,
+      }),
+    };
+    console.log({
+      forfeit: false,
+      games: games,
+      winners: winners,
+    });
+    fetch(
+      `${PUBLIC_API_URL}/bracket/${bracket.id}/completeGameSet/${gameSet.id}`,
+      gameSet_INIT,
+    ).then((response) => {
+      if (response.status === 403) globalStates.login = true;
+      else if (response.status === 200) {
+        // Update current game sets.
+        gameSet.winners = winners;
+
+        // Update any future options
+        if (roundIndex + 1 < bracket.gameSets.length) {
+          const nextRound = bracket.gameSets[roundIndex + 1];
+          const nextSetIndex = Math.floor(
+            gameSetIndex /
+              (gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn),
+          );
+          if (nextSetIndex < nextRound.length) {
+            winners.forEach((winner) => {
+              nextRound[nextSetIndex].playerSets.push(winner);
+            });
+          } else {
+            fetch(`${PUBLIC_API_URL}/bracket/${bracket.id}/complete`, {
+              method: "POST",
+            });
+          }
+        }
+      } else {
+        response.text().then((error) => console.log(error));
       }
-    }
+    });
+  };
 
-    // TODO: Tell the server about the win duh.
+  const getLosersPlayerSets = (): PlayerSet[] => {
+    const losersPlayerSets: PlayerSet[] = [];
+
+    bracket.losers.forEach((loser) => {
+      const playerSet = playerSetMap.get(loser);
+      if (playerSet !== undefined) losersPlayerSets.push(playerSet);
+    });
+
+    return losersPlayerSets;
   };
 </script>
 
 {#if reviveSet !== undefined}
   <RandomSelect
     gameType={bracket.gameType}
-    pool={bracket.losers}
+    pool={getLosersPlayerSets()}
     onRevived={(revived) => {
       if (reviveSet !== undefined) {
         reviveSet.playerSets.push(revived);
@@ -149,7 +216,7 @@
         return `${capPrev} ${capCurr}`;
       })}
   </h1>
-  <b>{bracket.date.toDateString()}</b>
+  <b>{new Date(bracket.date).toDateString()}</b>
   <div class="rounds">
     {#each bracket.gameSets as gameSets, roundIndex}
       <div class="round">
@@ -162,9 +229,11 @@
               {/if}
               <!-- Display a GameSet or a Revive/Add -->
               <GameSetRender
+                bracketId={bracket.id}
                 gameType={bracket.gameType}
                 {gameSet}
                 disabled={currentRound !== roundIndex}
+                {playerSetMap}
                 onRevive={(gameSet) => {
                   reviveSet = gameSet;
                 }}

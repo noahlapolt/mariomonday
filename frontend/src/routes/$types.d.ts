@@ -2,23 +2,26 @@
 
 type Bracket = {
   id: string;
-  date: Date;
+  date: string;
   gameType: string;
-  winners: PlayerSet[];
-  losers: PlayerSet[];
+  rounds: number;
+  winners: string[];
+  losers: string[];
   gameSets: GameSet[][];
+  teams: PlayerSet[];
 };
 
 type Game = {
   id: string;
-  winners: PlayerSet[];
+  gameType: string;
   playerSets: PlayerSet[];
 };
 
+
 type GameSet = {
   id: string;
-  playerSets: PlayerSet[];
-  winners: PlayerSet[];
+  playerSets: string[];
+  winners: string[];
   previousGameSets: string[];
   games: Game[];
 };
