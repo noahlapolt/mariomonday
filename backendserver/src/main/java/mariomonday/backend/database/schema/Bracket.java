@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
@@ -72,6 +74,21 @@ public class Bracket {
       .filter(gs -> gs.getRoundIndex() == 0)
       .findFirst()
       .orElse(null);
+  }
+
+  /**
+   * Get all players (not player sets) who are still alive in the tournament.
+   */
+  @JsonIgnore
+  public Set<Player> getRemainingPlayers() {
+    return gameSets
+      .stream()
+      .filter(gameSet -> gameSet.getWinners().isEmpty())
+      .map(GameSet::getPlayers)
+      .flatMap(Collection::stream)
+      .map(PlayerSet::getPlayers)
+      .flatMap(Collection::stream)
+      .collect(Collectors.toSet());
   }
 
   public static Bracket loadLazyBracket(Bracket bracket) {

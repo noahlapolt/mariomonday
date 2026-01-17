@@ -1,10 +1,6 @@
 package mariomonday.backend.apis;
 
-import com.mongodb.ClientSessionOptions;
-import com.mongodb.client.ClientSession;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import mariomonday.backend.apis.schema.AddPlayerSetToBracketRequest;
 import mariomonday.backend.apis.schema.ApiBracket;
 import mariomonday.backend.apis.schema.CompleteGameSetRequest;
 import mariomonday.backend.apis.schema.CreateBracketRequest;
@@ -26,7 +23,6 @@ import mariomonday.backend.database.tables.BracketRepository;
 import mariomonday.backend.database.tables.GameRepository;
 import mariomonday.backend.database.tables.GameSetRepository;
 import mariomonday.backend.database.tables.PlayerRepository;
-import mariomonday.backend.error.exceptions.AlreadyExistsException;
 import mariomonday.backend.error.exceptions.InvalidRequestException;
 import mariomonday.backend.error.exceptions.NotFoundException;
 import mariomonday.backend.managers.ratingcalculators.AbstractEloManager;
@@ -183,9 +179,11 @@ public class BracketController {
   }
 
   /**
-   * Create a new bracket
-   * @param request The request to create the bracket
-   * @return The newly created bracket
+   * Complete a game set within a bracket
+   * @param bracketId The bracket this game set is a part of
+   * @param gameSetId The game set to complete
+   * @param request The request to complete the game set
+   * @return The bracket, updated with the completed game set
    */
   @PostMapping("/bracket/{bracketId}/completeGameSet/{gameSetId}")
   public ApiBracket completeGameSet(
@@ -286,6 +284,72 @@ public class BracketController {
     gameSet.setGames(new HashSet<>(gameRepo.saveAll(games)));
     gameSetRepo.save(gameSet);
     return ApiBracket.fromBracket(bracketRepo.findById(bracket.getId()).get());
+  }
+
+  /**
+   * Adds the given player to the given bracket in the given game set
+   * @param bracketId The bracket to add the player to
+   * @return The bracket, updated with the new player
+   */
+  @PostMapping("/bracket/{bracketId}/addPlayer")
+  public ApiBracket addPlayer(@PathVariable String bracketId, @RequestBody AddPlayerSetToBracketRequest request) {
+    var gameSet = gameSetRepo
+      .findById(request.getGameSetId())
+      .orElseThrow(() -> new NotFoundException("Game Set not found"));
+    var bracket = bracketRepo.findById(bracketId).orElseThrow(() -> new NotFoundException("Bracket not found"));
+    if (
+      !bracket.getGameSets().stream().map(GameSet::getId).collect(Collectors.toSet()).contains(request.getGameSetId())
+    ) {
+      throw new InvalidRequestException("The given game set is not associated with the given bracket");
+    }
+    if (gameSet.getTotalPlayers() == bracket.getGameType().getMaxPlayerSets()) {
+      throw new InvalidRequestException("Requested game is full!");
+    }
+    if (request.getPlayerIds() == null) {
+      throw new InvalidRequestException("Players may not be null!");
+    }
+    var remainingPlayerIds = bracket.getRemainingPlayers().stream().map(Player::getId).collect(Collectors.toSet());
+    List<Player> players = new ArrayList<>();
+    for (var playerId : request.getPlayerIds()) {
+      if (remainingPlayerIds.contains(playerId)) {
+        throw new InvalidRequestException("Player ID " + playerId + " is still alive and kicking!");
+      }
+      players.add(
+        playerRepo.findById(playerId).orElseThrow(() -> new NotFoundException("Player ID " + playerId + " not found"))
+      );
+    }
+
+    var playerSetOpt = bracket
+      .getTeams()
+      .stream()
+      .filter(team ->
+        team.getPlayers().stream().map(Player::getId).collect(Collectors.toSet()).containsAll(request.getPlayerIds())
+      )
+      .findFirst();
+    PlayerSet playerSet;
+    if (playerSetOpt.isEmpty()) {
+      // In single player, player not in the tourney yet.
+      // In doubles or more, this player combo is not in the tourney yet.
+      if (players.size() > 1 && request.getTeamName() == null) {
+        throw new InvalidRequestException("Must provide a team name!");
+      }
+      playerSet = PlayerSet.builder()
+        .name(players.size() == 1 ? players.get(0).getName() : request.getTeamName())
+        .id(UUID.randomUUID().toString())
+        .players(players)
+        .build();
+      var currTeams = bracket.getTeams();
+      currTeams.add(playerSet);
+      bracket.setTeams(currTeams);
+      bracketRepo.save(bracket);
+    } else {
+      playerSet = playerSetOpt.get();
+    }
+    var addedPlayerSets = gameSet.getAddedPlayerSets();
+    addedPlayerSets.add(playerSet);
+    gameSet.setAddedPlayerSets(addedPlayerSets);
+    gameSetRepo.save(gameSet);
+    return ApiBracket.fromBracket(bracketRepo.findById(bracketId).get());
   }
 
   /**
