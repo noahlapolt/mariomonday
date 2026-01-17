@@ -56,8 +56,9 @@
     gameInfo.playersOnATeam * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
   const gameSetsHeight =
     (playerSetHeight + 10) *
-    bracket.gameSets[0].length *
-    gameInfo.maxPlayerSets;
+      bracket.gameSets[0].length *
+      gameInfo.maxPlayerSets +
+    4;
 
   const resolveGameSet = (
     roundIndex: number,

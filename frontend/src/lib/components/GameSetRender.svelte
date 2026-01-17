@@ -198,6 +198,8 @@
 <style>
   .gameSet {
     width: 20rem;
+    border-top: white 1px solid;
+    border-bottom: white 1px solid;
   }
 
   .set {
