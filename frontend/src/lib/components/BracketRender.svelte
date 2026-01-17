@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { PUBLIC_API_URL } from "$env/static/public";
   import GameSetRender from "./GameSetRender.svelte";
   import NewPlayerSet from "./NewPlayerSet.svelte";
   import RandomSelect from "./RandomSelect.svelte";
-  import { GameTypes } from "./Utils.svelte";
+  import { GameTypes, globalStates } from "./Utils.svelte";
   import { SvelteMap } from "svelte/reactivity";
 
   let {
@@ -53,7 +53,7 @@
   const gameInfo = GameTypes[bracket.gameType];
   const maxPrevGames = gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn;
   const playerSetHeight =
-    gameInfo.maxPlayerSets * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
+    gameInfo.playersOnATeam * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
   const gameSetsHeight =
     (playerSetHeight + 10) *
     bracket.gameSets[0].length *
@@ -80,19 +80,26 @@
     });
 
     // Count up the wins.
+    const games: string[][] = [];
     gameSet.games.forEach((game) => {
-      game.winners.forEach((winner) => {
-        let winCount = totalWinsPerSet.get(winner);
-        if (winCount !== undefined) {
-          totalWinsPerSet.set(winner, {
-            wins: winCount.wins + 1,
-            playerSetId: winCount.playerSetId,
-          });
-        } else {
-          // This will should never run, but its here just in case.
-          totalWinsPerSet.set(winner, { wins: 1, playerSetId: winner });
+      game.playerSets.forEach((playerSet, index) => {
+        if (index < gameInfo.playerSetsToMoveOn) {
+          let winCount = totalWinsPerSet.get(playerSet.id);
+          if (winCount !== undefined) {
+            totalWinsPerSet.set(playerSet.id, {
+              wins: winCount.wins + 1,
+              playerSetId: winCount.playerSetId,
+            });
+          } else {
+            // This will should never run, but its here just in case.
+            totalWinsPerSet.set(playerSet.id, {
+              wins: 1,
+              playerSetId: playerSet.id,
+            });
+          }
         }
       });
+      games.push(game.playerSets.map((playerSet) => playerSet.id));
     });
 
     // Sort by most wins.
@@ -101,32 +108,62 @@
     );
 
     // Adds the winners.
+    const winners: string[] = [];
     for (
       let i = 0;
       i < sortedWins.length && i < gameInfo.playerSetsToMoveOn;
       i++
     ) {
-      gameSet.winners.push(sortedWins[i][1].playerSetId);
-    }
-    // Adds the losers.
-    for (let i = gameInfo.playerSetsToMoveOn; i < sortedWins.length; i++) {
-      bracket.losers.push(sortedWins[i][1].playerSetId);
+      winners.push(sortedWins[i][1].playerSetId);
     }
 
-    // Update any future options
-    if (roundIndex + 1 < bracket.gameSets.length) {
-      const nextRound = bracket.gameSets[roundIndex + 1];
-      const nextSetIndex = Math.floor(
-        gameSetIndex / (gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn),
-      );
-      if (nextSetIndex < nextRound.length) {
-        gameSet.winners.forEach((winner) => {
-          nextRound[nextSetIndex].playerSets.push(winner);
-        });
+    // Let the server know about the win.
+    const gameSet_INIT: RequestInit = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        forfeit: false,
+        games: games,
+        winners: winners,
+      }),
+    };
+    console.log({
+      forfeit: false,
+      games: games,
+      winners: winners,
+    });
+    fetch(
+      `${PUBLIC_API_URL}/bracket/${bracket.id}/completeGameSet/${gameSet.id}`,
+      gameSet_INIT,
+    ).then((response) => {
+      if (response.status === 403) globalStates.login = true;
+      else if (response.status === 200) {
+        // Update current game sets.
+        gameSet.winners = winners;
+
+        // Update any future options
+        if (roundIndex + 1 < bracket.gameSets.length) {
+          const nextRound = bracket.gameSets[roundIndex + 1];
+          const nextSetIndex = Math.floor(
+            gameSetIndex /
+              (gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn),
+          );
+          if (nextSetIndex < nextRound.length) {
+            winners.forEach((winner) => {
+              nextRound[nextSetIndex].playerSets.push(winner);
+            });
+          } else {
+            fetch(`${PUBLIC_API_URL}/bracket/${bracket.id}/complete`, {
+              method: "POST",
+            });
+          }
+        }
+      } else {
+        response.text().then((error) => console.log(error));
       }
-    }
-
-    // TODO: Tell the server about the win duh.
+    });
   };
 
   const getLosersPlayerSets = (): PlayerSet[] => {
@@ -191,6 +228,7 @@
               {/if}
               <!-- Display a GameSet or a Revive/Add -->
               <GameSetRender
+                bracketId={bracket.id}
                 gameType={bracket.gameType}
                 {gameSet}
                 disabled={currentRound !== roundIndex}

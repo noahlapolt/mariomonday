@@ -13,8 +13,8 @@ type Bracket = {
 
 type Game = {
   id: string;
-  winners: string[];
-  playerSets: string[];
+  gameType: string;
+  playerSets: PlayerSet[];
 };
 
 
