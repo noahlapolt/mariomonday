@@ -305,6 +305,9 @@ public class BracketController {
     if (gameSet.getTotalPlayers() == bracket.getGameType().getMaxPlayerSets()) {
       throw new InvalidRequestException("Requested game is full!");
     }
+    if (!gameSet.getWinners().isEmpty()) {
+      throw new InvalidRequestException("Cannot add player to completed game set!");
+    }
     if (request.getPlayerIds() == null) {
       throw new InvalidRequestException("Players may not be null!");
     }
