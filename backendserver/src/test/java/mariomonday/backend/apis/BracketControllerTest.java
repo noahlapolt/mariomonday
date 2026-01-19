@@ -29,7 +29,6 @@ import mariomonday.backend.utils.TestDataUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.matchers.Not;
 
 public class BracketControllerTest extends BaseSpringTest {
 
@@ -1328,9 +1327,9 @@ public class BracketControllerTest extends BaseSpringTest {
       .findFirst()
       .get()
       .getId();
-    var normalGameIndex = bracket.getGameSets().get(0).get(0).getPlayerSets().contains(noahId) ? 1 : 0;
+    var normalGameIndex = bracket.getGameSets().get(0).get(0).getPlayerSets().contains(reedId) ? 1 : 0;
     var byeGameId = bracket.getGameSets().get(0).get(1 - normalGameIndex).getId();
-    completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(normalGameIndex), List.of(reedId, zachId));
+    completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(normalGameIndex), List.of(noahId, zachId));
 
     var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(List.of("Zach")).build();
 
@@ -1344,7 +1343,7 @@ public class BracketControllerTest extends BaseSpringTest {
     var newGameSet = GameSet.loadLazyGameSet(gameSetRepository.findById(byeGameId).get());
     // Assert player set was added to game set
     Assertions.assertTrue(
-      newGameSet.getAddedPlayerSets().stream().map(PlayerSet::getId).collect(Collectors.toSet()).contains(noahId)
+      newGameSet.getAddedPlayerSets().stream().map(PlayerSet::getId).collect(Collectors.toSet()).contains(zachId)
     );
     Assertions.assertEquals(newGameSet.getAddedPlayerSets().size(), 2);
   }
@@ -1700,6 +1699,48 @@ public class BracketControllerTest extends BaseSpringTest {
 
     // Act
     Assertions.assertThrows(NotFoundException.class, () -> bracketController.addPlayer(bracket.getId(), request));
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenGameIsCompleted() {
+    // Setup
+    // Set seeding so bye is consistent
+    var reed = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    reed.getEloMap().put(GameType.SMASH_ULTIMATE_SINGLES, 1800);
+    playerRepository.save(reed);
+    var noah = playerRepository.findById(playerNameToPlayer.get("Noah").getId()).get();
+    noah.getEloMap().put(GameType.SMASH_ULTIMATE_SINGLES, 1200);
+    playerRepository.save(noah);
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId()),
+          "Noah",
+          List.of(playerNameToPlayer.get("Noah").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Reed"))
+      .findFirst()
+      .get()
+      .getId();
+    var normalGameIndex = bracket.getGameSets().get(0).get(0).getPlayerSets().contains(reedId) ? 1 : 0;
+    var byeGameId = bracket.getGameSets().get(0).get(1 - normalGameIndex).getId();
+    var req = CompleteGameSetRequest.builder().games(List.of()).forfeit(false).winners(List.of(reedId)).build();
+    bracketController.completeGameSet(bracket.getId(), byeGameId, req);
+
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(List.of("Zach")).build();
+
+    // Act
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.addPlayer(bracket.getId(), request));
   }
 
   @Test

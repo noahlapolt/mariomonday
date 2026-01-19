@@ -1,6 +1,7 @@
 package mariomonday.backend.managers.seeders;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +56,7 @@ public class LocalRandomSeeder extends AbstractSeeder {
       teamToNewElo.put(team, team.getElo(gameType) + rand.nextInt(maxEloChange * 2) - maxEloChange)
     );
     teams.sort(Comparator.comparingInt(teamToNewElo::get));
+    Collections.reverse(teams);
     return teams;
   }
 }

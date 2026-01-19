@@ -1,6 +1,7 @@
 package mariomonday.backend.managers.seeders;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ public class EloSeeder extends AbstractSeeder {
   public List<PlayerSet> seed(Set<PlayerSet> unseededPlayers, GameType gameType) {
     List<PlayerSet> teams = new ArrayList<>(unseededPlayers);
     teams.sort(Comparator.comparingInt(team -> team.getElo(gameType)));
+    Collections.reverse(teams);
     return teams;
   }
 }
