@@ -10,11 +10,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import mariomonday.backend.apis.schema.AddPlayerSetToBracketRequest;
 import mariomonday.backend.apis.schema.ApiBracket;
 import mariomonday.backend.apis.schema.ApiGameSet;
 import mariomonday.backend.apis.schema.CompleteGameSetRequest;
 import mariomonday.backend.apis.schema.CreateBracketRequest;
 import mariomonday.backend.database.schema.Bracket;
+import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
 import mariomonday.backend.database.schema.Player;
 import mariomonday.backend.database.schema.PlayerSet;
@@ -40,7 +42,9 @@ public class BracketControllerTest extends BaseSpringTest {
     var testPlayer2 = Player.builder().id("Zach").name("Zach").eloMap(Player.generateStartingEloMap()).build();
     var testPlayer3 = Player.builder().id("Noah").name("Noah").eloMap(Player.generateStartingEloMap()).build();
     var testPlayer4 = Player.builder().id("Jack").name("Jack").eloMap(Player.generateStartingEloMap()).build();
-    playerRepository.saveAll(List.of(testPlayer1, testPlayer2, testPlayer3, testPlayer4));
+    var testPlayer5 = Player.builder().id("Evil").name("Evil").eloMap(Player.generateStartingEloMap()).build();
+    var testPlayer6 = Player.builder().id("DrEvil").name("DrEvil").eloMap(Player.generateStartingEloMap()).build();
+    playerRepository.saveAll(List.of(testPlayer1, testPlayer2, testPlayer3, testPlayer4, testPlayer5, testPlayer6));
     randomPlayers = TestDataUtil.createNFakePlayers(16)
       .stream()
       .map(playerSet -> playerSet.getPlayers().stream().findFirst().get())
@@ -1230,6 +1234,644 @@ public class BracketControllerTest extends BaseSpringTest {
 
     // Act & Verify
     Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.completeBracket(bracket.getId()));
+  }
+
+  @Test
+  public void testAddPlayer_shouldAddPlayerToGameSet_whenSinglesNotInTourney() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        randomPlayers.stream().limit(15).collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())))
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    var reedId = playerNameToPlayer.get("Reed").getId();
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(List.of(reedId)).build();
+
+    // Act
+    bracketController.addPlayer(bracket.getId(), request);
+
+    // Verify
+    var newBracket = bracketRepository.findById(bracket.getId()).get();
+    var addedPlayerSet = newBracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getPlayers().stream().map(Player::getId).collect(Collectors.toSet()).contains(reedId))
+      .findFirst()
+      .get();
+    // Assert player set was added for new player
+    Assertions.assertNotNull(addedPlayerSet);
+    var newGameSet = GameSet.loadLazyGameSet(gameSetRepository.findById(byeGameId).get());
+    // Assert player set was added to game set
+    Assertions.assertTrue(
+      newGameSet
+        .getAddedPlayerSets()
+        .stream()
+        .map(PlayerSet::getId)
+        .collect(Collectors.toSet())
+        .contains(addedPlayerSet.getId())
+    );
+  }
+
+  @Test
+  public void testAddPlayer_shouldAddPlayerToGameSet_whenSinglesRevive() {
+    // Setup
+    // Set seeding so bye is consistent
+    var reed = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    reed.getEloMap().put(GameType.SMASH_ULTIMATE_SINGLES, 1800);
+    playerRepository.save(reed);
+    var noah = playerRepository.findById(playerNameToPlayer.get("Noah").getId()).get();
+    noah.getEloMap().put(GameType.SMASH_ULTIMATE_SINGLES, 1200);
+    playerRepository.save(noah);
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId()),
+          "Noah",
+          List.of(playerNameToPlayer.get("Noah").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Reed"))
+      .findFirst()
+      .get()
+      .getId();
+    var zachId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Zach"))
+      .findFirst()
+      .get()
+      .getId();
+    var noahId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Noah"))
+      .findFirst()
+      .get()
+      .getId();
+    var normalGameIndex = bracket.getGameSets().get(0).get(0).getPlayerSets().contains(reedId) ? 1 : 0;
+    var byeGameId = bracket.getGameSets().get(0).get(1 - normalGameIndex).getId();
+    completeGameSet(bracket.getId(), bracket.getGameSets().get(0).get(normalGameIndex), List.of(noahId, zachId));
+
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(List.of("Zach")).build();
+
+    // Act
+    bracketController.addPlayer(bracket.getId(), request);
+
+    // Verify
+    var newBracket = bracketRepository.findById(bracket.getId()).get();
+    // No new teams should have been added
+    Assertions.assertEquals(newBracket.getTeams().size(), 3);
+    var newGameSet = GameSet.loadLazyGameSet(gameSetRepository.findById(byeGameId).get());
+    // Assert player set was added to game set
+    Assertions.assertTrue(
+      newGameSet.getAddedPlayerSets().stream().map(PlayerSet::getId).collect(Collectors.toSet()).contains(zachId)
+    );
+    Assertions.assertEquals(newGameSet.getAddedPlayerSets().size(), 2);
+  }
+
+  @Test
+  public void testAddPlayer_shouldAddTeamToGameSet_whenDoublesNeitherInTourney() {
+    // Setup
+    Map<String, List<String>> teams = new HashMap<>();
+    for (int i = 0; i < randomPlayers.size() - 2; i += 2) {
+      teams.put(String.valueOf(i), List.of(randomPlayers.get(i).getId(), randomPlayers.get(i + 1).getId()));
+    }
+    var bracketReq = CreateBracketRequest.builder().teams(teams).gameType(GameType.SMASH_ULTIMATE_DOUBLES).build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    var reedId = playerNameToPlayer.get("Reed").getId();
+    var zachId = playerNameToPlayer.get("Zach").getId();
+    var request = AddPlayerSetToBracketRequest.builder()
+      .gameSetId(byeGameId)
+      .playerIds(List.of(reedId, zachId))
+      .teamName("The epics")
+      .build();
+
+    // Act
+    bracketController.addPlayer(bracket.getId(), request);
+
+    // Verify
+    var newBracket = bracketRepository.findById(bracket.getId()).get();
+    var addedPlayerSet = newBracket
+      .getTeams()
+      .stream()
+      .filter(ps -> ps.getName().equals("The epics"))
+      .findFirst()
+      .get();
+    // Assert player set was added for new team
+    Assertions.assertNotNull(addedPlayerSet);
+    Assertions.assertEquals(addedPlayerSet.getPlayers().size(), 2);
+    Assertions.assertTrue(
+      addedPlayerSet
+        .getPlayers()
+        .stream()
+        .map(Player::getId)
+        .collect(Collectors.toSet())
+        .containsAll(List.of(reedId, zachId))
+    );
+    var newGameSet = GameSet.loadLazyGameSet(gameSetRepository.findById(byeGameId).get());
+    // Assert player set was added to game set
+    Assertions.assertTrue(
+      newGameSet
+        .getAddedPlayerSets()
+        .stream()
+        .map(PlayerSet::getId)
+        .collect(Collectors.toSet())
+        .contains(addedPlayerSet.getId())
+    );
+  }
+
+  @Test
+  public void testAddPlayer_shouldAddTeamToGameSet_whenDoublesOneRevive() {
+    // Setup
+    Map<String, List<String>> teams = new HashMap<>();
+    for (int i = 0; i < randomPlayers.size() - 2; i += 2) {
+      teams.put(String.valueOf(i), List.of(randomPlayers.get(i).getId(), randomPlayers.get(i + 1).getId()));
+    }
+    var bracketReq = CreateBracketRequest.builder().teams(teams).gameType(GameType.SMASH_ULTIMATE_DOUBLES).build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var playedGame = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() > 1)
+      .findFirst()
+      .get();
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    completeGameSet(bracket.getId(), playedGame);
+    var loserId = gameSetRepository
+      .findById(playedGame.getId())
+      .get()
+      .getLosers()
+      .stream()
+      .findFirst()
+      .get()
+      .getPlayers()
+      .stream()
+      .findFirst()
+      .get()
+      .getId();
+    var reedId = playerNameToPlayer.get("Reed").getId();
+    var request = AddPlayerSetToBracketRequest.builder()
+      .gameSetId(byeGameId)
+      .playerIds(List.of(reedId, loserId))
+      .teamName("The comeback kings")
+      .build();
+
+    // Act
+    bracketController.addPlayer(bracket.getId(), request);
+
+    // Verify
+    var newBracket = bracketRepository.findById(bracket.getId()).get();
+    var addedPlayerSet = newBracket
+      .getTeams()
+      .stream()
+      .filter(ps -> ps.getName().equals("The comeback kings"))
+      .findFirst()
+      .get();
+    // Assert player set was added for new team
+    Assertions.assertNotNull(addedPlayerSet);
+    Assertions.assertEquals(addedPlayerSet.getPlayers().size(), 2);
+    Assertions.assertTrue(
+      addedPlayerSet
+        .getPlayers()
+        .stream()
+        .map(Player::getId)
+        .collect(Collectors.toSet())
+        .containsAll(List.of(reedId, loserId))
+    );
+    var newGameSet = GameSet.loadLazyGameSet(gameSetRepository.findById(byeGameId).get());
+    // Assert player set was added to game set
+    Assertions.assertTrue(
+      newGameSet
+        .getAddedPlayerSets()
+        .stream()
+        .map(PlayerSet::getId)
+        .collect(Collectors.toSet())
+        .contains(addedPlayerSet.getId())
+    );
+  }
+
+  @Test
+  public void testAddPlayer_shouldAddTeamToGameSet_whenDoublesSameTeamRevive() {
+    // Setup
+    Map<String, List<String>> teams = new HashMap<>();
+    for (int i = 0; i < randomPlayers.size() - 2; i += 2) {
+      teams.put(String.valueOf(i), List.of(randomPlayers.get(i).getId(), randomPlayers.get(i + 1).getId()));
+    }
+    var bracketReq = CreateBracketRequest.builder().teams(teams).gameType(GameType.SMASH_ULTIMATE_DOUBLES).build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var playedGame = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() > 1)
+      .findFirst()
+      .get();
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    completeGameSet(bracket.getId(), playedGame);
+    var loser = gameSetRepository.findById(playedGame.getId()).get().getLosers().stream().findFirst().get();
+    var request = AddPlayerSetToBracketRequest.builder()
+      .gameSetId(byeGameId)
+      .playerIds(loser.getPlayers().stream().map(Player::getId).toList())
+      .teamName("The walking Ls")
+      .build();
+
+    // Act
+    bracketController.addPlayer(bracket.getId(), request);
+
+    // Verify
+    var newBracket = bracketRepository.findById(bracket.getId()).get();
+    // No new teams should have been added
+    Assertions.assertEquals(newBracket.getTeams().size(), 7);
+    var newGameSet = GameSet.loadLazyGameSet(gameSetRepository.findById(byeGameId).get());
+    // Assert loser team was added to game set
+    Assertions.assertTrue(
+      newGameSet.getAddedPlayerSets().stream().map(PlayerSet::getId).collect(Collectors.toSet()).contains(loser.getId())
+    );
+  }
+
+  @Test
+  public void testAddPlayer_shouldAddTeamToGameSet_whenDoublesNewTeamRevive() {
+    // Both players have been eliminated, but were on different teams
+    // Setup
+    Map<String, List<String>> teams = new HashMap<>();
+    for (int i = 0; i < randomPlayers.size() - 2; i += 2) {
+      teams.put(String.valueOf(i), List.of(randomPlayers.get(i).getId(), randomPlayers.get(i + 1).getId()));
+    }
+    var bracketReq = CreateBracketRequest.builder().teams(teams).gameType(GameType.SMASH_ULTIMATE_DOUBLES).build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var playedGame = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() > 1)
+      .findFirst()
+      .get();
+    var playedGame2 = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() > 1 && !gs.getId().equals(playedGame.getId()))
+      .findFirst()
+      .get();
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    completeGameSet(bracket.getId(), playedGame);
+    completeGameSet(bracket.getId(), playedGame2);
+    var loserId = gameSetRepository
+      .findById(playedGame.getId())
+      .get()
+      .getLosers()
+      .stream()
+      .findFirst()
+      .get()
+      .getPlayers()
+      .stream()
+      .findFirst()
+      .get()
+      .getId();
+    var loser2Id = gameSetRepository
+      .findById(playedGame2.getId())
+      .get()
+      .getLosers()
+      .stream()
+      .findFirst()
+      .get()
+      .getPlayers()
+      .stream()
+      .findFirst()
+      .get()
+      .getId();
+    var request = AddPlayerSetToBracketRequest.builder()
+      .gameSetId(byeGameId)
+      .playerIds(List.of(loserId, loser2Id))
+      .teamName("The comeback kings")
+      .build();
+
+    // Act
+    bracketController.addPlayer(bracket.getId(), request);
+
+    // Verify
+    var newBracket = bracketRepository.findById(bracket.getId()).get();
+    var addedPlayerSet = newBracket
+      .getTeams()
+      .stream()
+      .filter(ps -> ps.getName().equals("The comeback kings"))
+      .findFirst()
+      .get();
+    // Assert player set was added for new team
+    Assertions.assertNotNull(addedPlayerSet);
+    Assertions.assertEquals(addedPlayerSet.getPlayers().size(), 2);
+    Assertions.assertTrue(
+      addedPlayerSet
+        .getPlayers()
+        .stream()
+        .map(Player::getId)
+        .collect(Collectors.toSet())
+        .containsAll(List.of(loserId, loser2Id))
+    );
+    var newGameSet = GameSet.loadLazyGameSet(gameSetRepository.findById(byeGameId).get());
+    // Assert player set was added to game set
+    Assertions.assertTrue(
+      newGameSet
+        .getAddedPlayerSets()
+        .stream()
+        .map(PlayerSet::getId)
+        .collect(Collectors.toSet())
+        .contains(addedPlayerSet.getId())
+    );
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenGameSetDoesNotExist() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        randomPlayers.stream().limit(15).collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())))
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = playerNameToPlayer.get("Reed").getId();
+    var request = AddPlayerSetToBracketRequest.builder()
+      .gameSetId("HAHA FUCK YOU IM FAKE")
+      .playerIds(List.of(reedId))
+      .build();
+
+    // Act
+    Assertions.assertThrows(NotFoundException.class, () -> bracketController.addPlayer(bracket.getId(), request));
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenBracketDoesNotExist() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        randomPlayers.stream().limit(15).collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())))
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    var reedId = playerNameToPlayer.get("Reed").getId();
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(List.of(reedId)).build();
+
+    // Act
+    Assertions.assertThrows(NotFoundException.class, () -> bracketController.addPlayer("Evil bracket", request));
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenPlayerDoesNotExist() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        randomPlayers.stream().limit(15).collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())))
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    var request = AddPlayerSetToBracketRequest.builder()
+      .gameSetId(byeGameId)
+      .playerIds(List.of("Fake asshole"))
+      .build();
+
+    // Act
+    Assertions.assertThrows(NotFoundException.class, () -> bracketController.addPlayer(bracket.getId(), request));
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenGameIsCompleted() {
+    // Setup
+    // Set seeding so bye is consistent
+    var reed = playerRepository.findById(playerNameToPlayer.get("Reed").getId()).get();
+    reed.getEloMap().put(GameType.SMASH_ULTIMATE_SINGLES, 1800);
+    playerRepository.save(reed);
+    var noah = playerRepository.findById(playerNameToPlayer.get("Noah").getId()).get();
+    noah.getEloMap().put(GameType.SMASH_ULTIMATE_SINGLES, 1200);
+    playerRepository.save(noah);
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        Map.of(
+          "Reed",
+          List.of(playerNameToPlayer.get("Reed").getId()),
+          "Zach",
+          List.of(playerNameToPlayer.get("Zach").getId()),
+          "Noah",
+          List.of(playerNameToPlayer.get("Noah").getId())
+        )
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var reedId = bracket
+      .getTeams()
+      .stream()
+      .filter(team -> team.getName().equals("Reed"))
+      .findFirst()
+      .get()
+      .getId();
+    var normalGameIndex = bracket.getGameSets().get(0).get(0).getPlayerSets().contains(reedId) ? 1 : 0;
+    var byeGameId = bracket.getGameSets().get(0).get(1 - normalGameIndex).getId();
+    var req = CompleteGameSetRequest.builder().games(List.of()).forfeit(false).winners(List.of(reedId)).build();
+    bracketController.completeGameSet(bracket.getId(), byeGameId, req);
+
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(List.of("Zach")).build();
+
+    // Act
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.addPlayer(bracket.getId(), request));
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenPlayerListNull() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        randomPlayers.stream().limit(15).collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())))
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(null).build();
+
+    // Act
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.addPlayer(bracket.getId(), request));
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenGameSetFull() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        randomPlayers.stream().limit(15).collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())))
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var normalGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 2)
+      .findFirst()
+      .get()
+      .getId();
+    var reedId = playerNameToPlayer.get("Reed").getId();
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(normalGameId).playerIds(List.of(reedId)).build();
+
+    // Act
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.addPlayer(bracket.getId(), request));
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenBracketGameSetMismatch() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        randomPlayers.stream().limit(15).collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())))
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var bracket2 = bracketController.postBracket(bracketReq);
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    var reedId = playerNameToPlayer.get("Reed").getId();
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(List.of(reedId)).build();
+
+    // Act
+    Assertions.assertThrows(InvalidRequestException.class, () ->
+      bracketController.addPlayer(bracket2.getId(), request)
+    );
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenNewTeamAndTeamNameNull() {
+    // Setup
+    Map<String, List<String>> teams = new HashMap<>();
+    for (int i = 0; i < randomPlayers.size() - 2; i += 2) {
+      teams.put(String.valueOf(i), List.of(randomPlayers.get(i).getId(), randomPlayers.get(i + 1).getId()));
+    }
+    var bracketReq = CreateBracketRequest.builder().teams(teams).gameType(GameType.SMASH_ULTIMATE_DOUBLES).build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    var reedId = playerNameToPlayer.get("Reed").getId();
+    var zachId = playerNameToPlayer.get("Zach").getId();
+    var request = AddPlayerSetToBracketRequest.builder()
+      .gameSetId(byeGameId)
+      .playerIds(List.of(reedId, zachId))
+      .teamName(null)
+      .build();
+
+    // Act
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.addPlayer(bracket.getId(), request));
+  }
+
+  @Test
+  public void testAddPlayer_shouldComplain_whenPlayerStillAlive() {
+    // Setup
+    var bracketReq = CreateBracketRequest.builder()
+      .teams(
+        randomPlayers.stream().limit(15).collect(Collectors.toMap(Player::getId, player -> List.of(player.getId())))
+      )
+      .gameType(GameType.SMASH_ULTIMATE_SINGLES)
+      .build();
+    var bracket = bracketController.postBracket(bracketReq);
+    var byeGameId = bracket
+      .getGameSets()
+      .get(0)
+      .stream()
+      .filter(gs -> gs.getPlayerSets().size() == 1)
+      .findFirst()
+      .get()
+      .getId();
+    var playerId = randomPlayers.get(0).getId();
+    var request = AddPlayerSetToBracketRequest.builder().gameSetId(byeGameId).playerIds(List.of(playerId)).build();
+
+    // Act
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.addPlayer(bracket.getId(), request));
   }
 
   @Test

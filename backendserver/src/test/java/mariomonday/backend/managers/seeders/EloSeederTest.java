@@ -33,7 +33,7 @@ public class EloSeederTest {
     var seededList = eloSeeder.seed(Set.of(player1, player2, player3), GameType.SMASH_ULTIMATE_SINGLES);
 
     // Verify
-    Assertions.assertEquals(List.of(player2, player3, player1), seededList);
+    Assertions.assertEquals(List.of(player1, player3, player2), seededList);
   }
 
   @Test
@@ -69,7 +69,7 @@ public class EloSeederTest {
     var seededList = eloSeeder.seed(Set.of(team1, team2, team3), GameType.SMASH_ULTIMATE_SINGLES);
 
     // Verify
-    Assertions.assertEquals(List.of(team2, team1, team3), seededList);
+    Assertions.assertEquals(List.of(team3, team1, team2), seededList);
   }
 
   @Test
@@ -122,8 +122,8 @@ public class EloSeederTest {
     Assertions.assertTrue(seededList.containsAll(List.of(player1, player2, player3)));
     var prevTeam = seededList.get(0);
     for (int i = 1; i < seededList.size(); i++) {
-      // Assert ELO is increasing
-      Assertions.assertTrue(prevTeam.getElo(GameType.MARIO_KART_8) <= seededList.get(i).getElo(GameType.MARIO_KART_8));
+      // Assert ELO is decreasing
+      Assertions.assertTrue(prevTeam.getElo(GameType.MARIO_KART_8) >= seededList.get(i).getElo(GameType.MARIO_KART_8));
       prevTeam = seededList.get(i);
     }
   }

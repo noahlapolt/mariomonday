@@ -34,7 +34,7 @@ public class LocalRandomSeederTest {
     var seededList = localRandomSeeder.seed(Set.of(player1, player2, player3), GameType.SMASH_ULTIMATE_SINGLES);
 
     // Verify
-    Assertions.assertEquals(List.of(player2, player3, player1), seededList);
+    Assertions.assertEquals(List.of(player1, player3, player2), seededList);
   }
 
   @Test
@@ -59,7 +59,7 @@ public class LocalRandomSeederTest {
     var seededList = localRandomSeeder.seed(Set.of(player1, player2, player3), GameType.SMASH_ULTIMATE_SINGLES);
 
     // Verify
-    Assertions.assertEquals(List.of(player2, player1, player3), seededList);
+    Assertions.assertEquals(List.of(player3, player1, player2), seededList);
   }
 
   @Test
@@ -88,9 +88,9 @@ public class LocalRandomSeederTest {
     Assertions.assertTrue(seededList.containsAll(List.of(player1, player2, player3)));
     var prevTeam = seededList.get(0);
     for (int i = 1; i < seededList.size(); i++) {
-      // Assert ELO is increasing
+      // Assert ELO is decreasing
       Assertions.assertTrue(
-        prevTeam.getElo(GameType.SMASH_ULTIMATE_SINGLES) <= seededList.get(i).getElo(GameType.SMASH_ULTIMATE_SINGLES)
+        prevTeam.getElo(GameType.SMASH_ULTIMATE_SINGLES) >= seededList.get(i).getElo(GameType.SMASH_ULTIMATE_SINGLES)
       );
       prevTeam = seededList.get(i);
     }
