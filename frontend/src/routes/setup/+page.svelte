@@ -188,6 +188,7 @@
             addPlayer(option);
             playerOptions = [];
             searchTerm = "";
+            document.getElementById("search")?.focus();
           }}
         >
           {option.name}
