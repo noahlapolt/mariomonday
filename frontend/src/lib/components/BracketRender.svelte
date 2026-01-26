@@ -5,6 +5,7 @@
   import RandomSelect from "./RandomSelect.svelte";
   import { GameTypes, globalStates } from "./Utils.svelte";
   import { SvelteMap } from "svelte/reactivity";
+  import areYouSure from "$lib/assets/are you sure.gif";
 
   let {
     bracket,
@@ -14,10 +15,9 @@
 
   let reviveSet: GameSet | undefined = $state();
   let newPlayerSet: PlayerSet | undefined = $state();
+  let confirmation: (() => void) | undefined = $state();
 
   // Get some important round info.
-  let gameSetCount = 0;
-  let resolvedCount = 0;
   let playerSetMap: SvelteMap<string, PlayerSet> = $derived.by(() => {
     const map = new SvelteMap<string, PlayerSet>();
 
@@ -110,43 +110,42 @@
         winners: winners,
       }),
     };
-    console.log({
-      forfeit: false,
-      games: games,
-      winners: winners,
-    });
-    fetch(
-      `${PUBLIC_API_URL}/bracket/${bracket.id}/completeGameSet/${gameSet.id}`,
-      gameSet_INIT,
-    ).then((response) => {
-      if (response.status === 403) globalStates.login = true;
-      else if (response.status === 200) {
-        // Update current game sets.
-        gameSet.winners = winners;
 
-        // Update any future options
-        if (roundIndex + 1 < bracket.gameSets.length) {
-          const nextRound = bracket.gameSets[roundIndex + 1];
-          const nextSetIndex = Math.floor(
-            gameSetIndex /
-              (gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn),
-          );
-          if (nextSetIndex < nextRound.length) {
-            winners.forEach((winner) => {
-              nextRound[nextSetIndex].playerSets.push(winner);
+    confirmation = () => {
+      fetch(
+        `${PUBLIC_API_URL}/bracket/${bracket.id}/completeGameSet/${gameSet.id}`,
+        gameSet_INIT,
+      ).then((response) => {
+        if (response.status === 403) globalStates.login = true;
+        else if (response.status === 200) {
+          // Update current game sets.
+          gameSet.winners = winners;
+
+          // Update any future options
+          if (roundIndex + 1 < bracket.gameSets.length) {
+            const nextRound = bracket.gameSets[roundIndex + 1];
+            const nextSetIndex = Math.floor(
+              gameSetIndex /
+                (gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn),
+            );
+            if (nextSetIndex < nextRound.length) {
+              winners.forEach((winner) => {
+                nextRound[nextSetIndex].playerSets.push(winner);
+              });
+            }
+            confirmation = undefined;
+          } else {
+            fetch(`${PUBLIC_API_URL}/bracket/${bracket.id}/complete`, {
+              method: "POST",
+            }).then((response) => {
+              if (response.status === 403) globalStates.login = true;
+              else if (response.status === 200) confirmation = undefined;
+              else response.text().then((error) => console.log(error));
             });
           }
-        } else {
-          fetch(`${PUBLIC_API_URL}/bracket/${bracket.id}/complete`, {
-            method: "POST",
-          }).then((response) => {
-            console.log(response);
-          });
-        }
-      } else {
-        response.text().then((error) => console.log(error));
-      }
-    });
+        } else response.text().then((error) => console.log(error));
+      });
+    };
   };
 
   const getLosersPlayerSets = (): PlayerSet[] => {
@@ -185,6 +184,37 @@
       newPlayerSet = undefined;
     }}
   />
+{/if}
+
+{#if confirmation !== undefined}
+  <div class="confirmPop">
+    <div class="confirm">
+      <img src={areYouSure} alt="Are you sure?" />
+      <div class="confirmButtons">
+        <button
+          onclick={() => {
+            confirmation = undefined;
+          }}
+          aria-label="Confirm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+            <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+            <path
+              d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"
+            />
+          </svg>
+        </button>
+        <button onclick={confirmation} aria-label="Confirm">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+            <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+            <path
+              d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
 {/if}
 
 <div class="bracket">
@@ -264,6 +294,44 @@
 </div>
 
 <style>
+  .confirmPop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #00000055;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .confirm {
+    background-color: #ffffff;
+    padding: 1rem;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .confirmButtons {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .confirm img {
+    width: 20rem;
+  }
+
   .bracket {
     display: flex;
     flex-direction: column;
