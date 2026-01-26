@@ -21,6 +21,13 @@
       <div class="loginButtons">
         <button
           onclick={() => {
+            globalStates.login = false;
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onclick={() => {
             const login_INIT: RequestInit = {
               method: "POST",
               headers: {
@@ -44,11 +51,6 @@
         >
           Submit
         </button>
-        <button
-          onclick={() => {
-            globalStates.login = false;
-          }}>Cancel</button
-        >
       </div>
     </div>
   </div>

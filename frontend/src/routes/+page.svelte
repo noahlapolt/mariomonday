@@ -22,10 +22,9 @@
     };
     let lastGame = $state(games.smash); //TODO figure out how to calculate this value.
     let stats = [
-        { name: "Reed", win: 4, loss: 100 },
-        { name: "Zach", win: 3, loss: 100 },
-        { name: "Jack", win: 2, loss: 100 },
-        { name: "Noah", win: 1, loss: 100 },
+        { name: "Undefined", win: 3, loss: 100 },
+        { name: "Undefined", win: 2, loss: 100 },
+        { name: "Undefined", win: 1, loss: 100 },
     ]; //api.getStats(); I assume this will be sorted by win/loss ratio? Needs to be a state.
 </script>
 
