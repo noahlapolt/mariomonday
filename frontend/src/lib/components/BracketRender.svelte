@@ -18,26 +18,6 @@
   // Get some important round info.
   let gameSetCount = 0;
   let resolvedCount = 0;
-  let currentRound = $derived.by(() => {
-    gameSetCount = 0;
-    resolvedCount = 0;
-    let foundRoundIndex = -1;
-    bracket.gameSets.forEach((round, roundIndex) => {
-      if (foundRoundIndex === -1) {
-        round.forEach((gameSet) => {
-          if (gameSet.playerSets.length > 0) gameSetCount += 1;
-          if (gameSet.winners.length > 0) resolvedCount += 1;
-        });
-        if (resolvedCount !== gameSetCount) foundRoundIndex = roundIndex;
-        else {
-          gameSetCount = 0;
-          resolvedCount = 0;
-        }
-      }
-    });
-
-    return foundRoundIndex;
-  });
   let playerSetMap: SvelteMap<string, PlayerSet> = $derived.by(() => {
     const map = new SvelteMap<string, PlayerSet>();
 
@@ -234,7 +214,7 @@
                 bracketId={bracket.id}
                 gameType={bracket.gameType}
                 {gameSet}
-                disabled={currentRound !== roundIndex}
+                disabled={gameSet.winners.length > 0}
                 {playerSetMap}
                 onRevive={(gameSet) => {
                   reviveSet = gameSet;
@@ -249,8 +229,7 @@
                 onclick={() => {
                   resolveGameSet(roundIndex, gameSet, gameSetIndex);
                 }}
-                disabled={currentRound !== roundIndex ||
-                  gameSet.winners.length > 0}
+                disabled={gameSet.winners.length > 0}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
                   <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
