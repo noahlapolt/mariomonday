@@ -22,7 +22,6 @@
     const Players_INIT: RequestInit = {
       method: "GET",
     };
-    document.cookie = `info={"playingTeams": [], "playerCount": 0}`;
     fetch(`${PUBLIC_API_URL}/player`, Players_INIT)
       .then((response) => response.json())
       .then((data: Player[]) => {

@@ -30,30 +30,37 @@
   /**
    * Adds a win to the current gameSet.
    */
-  const addWin = () => {
+  const addWin = (playerSetId: string) => {
     let orderedPlayerSet: PlayerSet[] = [];
 
     // Add winners.
+    winners.add(playerSetId);
     winners.forEach((winner) => {
       const playerSet = playerSetMap.get(winner);
       if (playerSet !== undefined) orderedPlayerSet.push(playerSet);
     });
 
-    // Add losers
-    gameSet.playerSets.forEach((setId) => {
-      const playerSet = playerSetMap.get(setId);
-      if (!winners.has(setId) && playerSet !== undefined)
-        orderedPlayerSet.push(playerSet);
-    });
+    if (winners.size === GAMEINFO.playerSetsToMoveOn) {
+      // Add losers
+      gameSet.playerSets.forEach((setId) => {
+        const playerSet = playerSetMap.get(setId);
+        if (!winners.has(setId) && playerSet !== undefined)
+          orderedPlayerSet.push(playerSet);
+      });
+      winners = new SvelteSet();
+    }
 
-    gameSet.games.push({
-      id: "",
-      gameType: gameType,
-      playerSets: orderedPlayerSet,
-    });
-
-    // Clean winners.
-    winners = new SvelteSet();
+    // Show the win.
+    if (winners.size <= 1) {
+      gameSet.games.push({
+        id: "",
+        gameType: gameType,
+        playerSets: orderedPlayerSet,
+      });
+    } else {
+      // Use the current game (last entered) and update the players.
+      gameSet.games[gameSet.games.length - 1].playerSets = orderedPlayerSet;
+    }
   };
 
   /**
@@ -113,17 +120,14 @@
         class="playerSet"
         disabled={disabled || gameSet.winners.length > 0}
         onclick={() => {
-          if (winners.size === GAMEINFO.playerSetsToMoveOn - 1) {
-            winners.add(playerSetId);
-            addWin();
-          } else winners.add(playerSetId);
+          addWin(playerSetId);
         }}
       >
         <PlayerSetRender playerSet={playerSetMap.get(playerSetId)} {gameType} />
         <div>
           {#each gameSet.games as game}
             {#each { length: GAMEINFO.playerSetsToMoveOn }, winnerIndex}
-              {#if game.playerSets[winnerIndex].id === playerSetId}
+              {#if winnerIndex < game.playerSets.length && game.playerSets[winnerIndex].id === playerSetId}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
                   <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
                   <path

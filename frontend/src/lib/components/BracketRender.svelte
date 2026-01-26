@@ -155,11 +155,13 @@
             winners.forEach((winner) => {
               nextRound[nextSetIndex].playerSets.push(winner);
             });
-          } else {
-            fetch(`${PUBLIC_API_URL}/bracket/${bracket.id}/complete`, {
-              method: "POST",
-            });
           }
+        } else {
+          fetch(`${PUBLIC_API_URL}/bracket/${bracket.id}/complete`, {
+            method: "POST",
+          }).then((response) => {
+            console.log(response);
+          });
         }
       } else {
         response.text().then((error) => console.log(error));
