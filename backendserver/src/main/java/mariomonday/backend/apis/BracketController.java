@@ -29,7 +29,10 @@ import mariomonday.backend.managers.ratingcalculators.AbstractEloManager;
 import mariomonday.backend.managers.seeders.AbstractSeeder;
 import mariomonday.backend.managers.tournamentcreators.AbstractBracketCreator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -104,6 +107,21 @@ public class BracketController {
       bracketRepo
         .findById(bracketId)
         .orElseThrow(() -> new NotFoundException("Bracket not found with id: " + bracketId))
+    );
+  }
+
+  /**
+   * Get the most recent bracket
+   */
+  @GetMapping("/getCurrentBracket")
+  ApiBracket getCurrentBracket() {
+    var query = new Query();
+    var results = mongoTemplate.find(query.with(Sort.by(Order.desc("date"))), Bracket.class);
+    return ApiBracket.fromBracket(
+      results
+        .stream()
+        .findFirst()
+        .orElseThrow(() -> new NotFoundException("No brackets exist!"))
     );
   }
 
