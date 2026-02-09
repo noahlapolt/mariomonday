@@ -340,6 +340,27 @@ public class BracketControllerTest extends BaseSpringTest {
   }
 
   @Test
+  public void testGetRecentBracket_shouldReturnBracket() {
+    // Setup
+    ApiBracket lastBracket = null;
+    for (int i = 0; i < 100; i++) {
+      lastBracket = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    }
+
+    // Act
+    var actualBracket = bracketController.getCurrentBracket();
+
+    // Verify
+    Assertions.assertEquals(lastBracket, actualBracket);
+  }
+
+  @Test
+  public void testGetRecentBracket_shouldComplain_whenNoBrackets() {
+    // Act & Verify
+    Assertions.assertThrows(NotFoundException.class, () -> bracketController.getCurrentBracket());
+  }
+
+  @Test
   public void testCompleteGameSet_shouldAddGamesAndUpdateGameSet_whenHappyPath() {
     // Setup
     var bracket = createBracketWithRandomPlayers();
@@ -1792,7 +1813,8 @@ public class BracketControllerTest extends BaseSpringTest {
       }
     }
     bracket = bracketRepository.save(bracket);
-    return ApiBracket.fromBracket(bracket);
+    // MongoDB does some time truncation and such so we want to get it in that state
+    return ApiBracket.fromBracket(bracketRepository.findById(bracket.getId()).get());
   }
 
   /**
