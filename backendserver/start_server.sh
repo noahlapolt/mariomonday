@@ -1,0 +1,1 @@
+DB_NAME=prod ./mvnw clean spring-boot:run
