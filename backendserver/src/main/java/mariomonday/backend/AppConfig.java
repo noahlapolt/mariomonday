@@ -35,14 +35,4 @@ public class AppConfig {
   public AbstractEloManager eloManager() {
     return new IndifferentEloManager();
   }
-
-  @Bean
-  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
-    return new MongoTransactionManager(dbFactory);
-  }
-
-  @Bean
-  MongoTemplate mongoTemplate(MongoDatabaseFactory dbFactory) {
-    return new MongoTemplate(dbFactory);
-  }
 }
