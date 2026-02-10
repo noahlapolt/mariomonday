@@ -22,7 +22,6 @@
     const Players_INIT: RequestInit = {
       method: "GET",
     };
-    document.cookie = `info={"playingTeams": [], "playerCount": 0}`;
     fetch(`${PUBLIC_API_URL}/player`, Players_INIT)
       .then((response) => response.json())
       .then((data: Player[]) => {
@@ -44,7 +43,16 @@
       return text.substring(0, 4) === "info";
     });
     if (info !== -1) {
-      ({ playingTeams, playerCount } = JSON.parse(data[info].split("=")[1]));
+      let cookieInfo: {
+        playingTeams: PlayerSet[];
+        playerCount: number;
+        mode: string;
+      } = JSON.parse(data[info].split("=")[1]);
+
+      if (cookieInfo.mode === gameType) {
+        playingTeams = cookieInfo.playingTeams;
+        playerCount = cookieInfo.playerCount;
+      }
     }
   });
 
@@ -55,7 +63,7 @@
   const saveTeams = () => {
     // This cookie only lasts for a day
     const expires = new Date(Date.now() + 86400000).toUTCString();
-    document.cookie = `info={"playingTeams": ${JSON.stringify(playingTeams)}, "playerCount": ${playerCount}}; expires=${expires}; path=/`;
+    document.cookie = `info={"playingTeams": ${JSON.stringify(playingTeams)}, "playerCount": ${playerCount}, "mode": "${gameType}"}; expires=${expires}; path=/`;
   };
 
   /**
@@ -180,6 +188,7 @@
             addPlayer(option);
             playerOptions = [];
             searchTerm = "";
+            document.getElementById("search")?.focus();
           }}
         >
           {option.name}

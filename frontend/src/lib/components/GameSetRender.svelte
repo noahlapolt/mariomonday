@@ -19,41 +19,41 @@
     disabled: boolean;
     playerSetMap: SvelteMap<string, PlayerSet>;
     onRevive: (gameSet: GameSet) => void;
-    onAddPlayerSet: (playerSet: PlayerSet) => void;
+    onAddPlayerSet: (gameSet: GameSet) => void;
   } = $props();
 
   const GAMEINFO = GameTypes[gameType];
   const PLAYERSETHEIGHT =
     GAMEINFO.playersOnATeam * 40 + (GAMEINFO.playersOnATeam > 1 ? 30 : 0);
-  let winners: Set<string> = $state(new SvelteSet());
+  const MEDALS = ["#FFD700", "#C0C0C0", "#CD7F32", "#000000"];
+  let gameRanks: PlayerSet[] = $state([]);
 
   /**
    * Adds a win to the current gameSet.
    */
-  const addWin = () => {
-    let orderedPlayerSet: PlayerSet[] = [];
+  const rankPlayerSet = (playerSetId: string) => {
+    // Put the user in this rank.
+    const playerSet = playerSetMap.get(playerSetId);
+    if (
+      playerSet !== undefined &&
+      gameRanks.find((player) => player.id === playerSetId) === undefined
+    )
+      gameRanks.push(playerSet);
 
-    // Add winners.
-    winners.forEach((winner) => {
-      const playerSet = playerSetMap.get(winner);
-      if (playerSet !== undefined) orderedPlayerSet.push(playerSet);
-    });
+    // Show the win.
+    if (gameRanks.length <= 1) {
+      gameSet.games.push({
+        id: "",
+        gameType: gameType,
+        playerSets: gameRanks,
+      });
+    } else {
+      // Use the current game (last entered) and update the players.
+      gameSet.games[gameSet.games.length - 1].playerSets = gameRanks;
+    }
 
-    // Add losers
-    gameSet.playerSets.forEach((setId) => {
-      const playerSet = playerSetMap.get(setId);
-      if (!winners.has(setId) && playerSet !== undefined)
-        orderedPlayerSet.push(playerSet);
-    });
-
-    gameSet.games.push({
-      id: "",
-      gameType: gameType,
-      playerSets: orderedPlayerSet,
-    });
-
-    // Clean winners.
-    winners = new SvelteSet();
+    // Clear the gameRanks if we have enough.
+    if (gameRanks.length === gameSet.playerSets.length) gameRanks = [];
   };
 
   /**
@@ -85,25 +85,6 @@
       }
     });
   };
-
-  /**
-   * Builds an empty set to add new players.
-   */
-  const addPlayerSet = () => {
-    // Adds all of the players
-    let newPlayers: Player[] = [];
-    for (let i = 0; i < GAMEINFO.playersOnATeam; i++) {
-      newPlayers.push({ id: "", name: "New Player", eloMap: {} });
-    }
-
-    // Builds the player set
-    let newSet: PlayerSet = {
-      id: "",
-      name: "New Team",
-      players: newPlayers,
-    };
-    onAddPlayerSet(newSet);
-  };
 </script>
 
 <div class="gameSet">
@@ -113,20 +94,18 @@
         class="playerSet"
         disabled={disabled || gameSet.winners.length > 0}
         onclick={() => {
-          if (winners.size === GAMEINFO.playerSetsToMoveOn - 1) {
-            winners.add(playerSetId);
-            addWin();
-          } else winners.add(playerSetId);
+          rankPlayerSet(playerSetId);
         }}
       >
         <PlayerSetRender playerSet={playerSetMap.get(playerSetId)} {gameType} />
         <div>
           {#each gameSet.games as game}
-            {#each { length: GAMEINFO.playerSetsToMoveOn }, winnerIndex}
-              {#if game.playerSets[winnerIndex].id === playerSetId}
+            {#each game.playerSets as playerSet, index}
+              {#if playerSet.id === playerSetId}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
                   <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
                   <path
+                    fill={MEDALS[index]}
                     d="M64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"
                   />
                 </svg>
@@ -181,8 +160,10 @@
       <button
         aria-label="Add Player/Team"
         style={`height: ${PLAYERSETHEIGHT}px;`}
-        disabled={true}
-        onclick={addPlayerSet}
+        {disabled}
+        onclick={() => {
+          onAddPlayerSet(gameSet);
+        }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
           <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->

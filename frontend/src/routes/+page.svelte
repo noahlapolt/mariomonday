@@ -1,31 +1,44 @@
 <!--
-    The landing screen will show information about Mario Monday and the last tourn with it's stats.
+    The landing screen will show information about Mario Monday and Smash singles stats.
 -->
 
 <script lang="ts">
+    import { PUBLIC_API_URL } from "$env/static/public";
     import smashImg from "$lib/assets/Smash.png";
-    import kartImg from "$lib/assets/kart_8.png";
+    import { onMount } from "svelte";
+    let stats: Player[] = $state([]);
 
-    const games = {
-        smash: {
-            name: "smash",
-            style: "background-color: #0c0c0c",
-            img: smashImg,
-            alt: "of the smash logo.",
-        },
-        kart: {
-            name: "kart",
-            style: "background-color: #47ffe3",
-            img: kartImg,
-            alt: "of the kart logo.",
-        },
-    };
-    let lastGame = $state(games.smash); //TODO figure out how to calculate this value.
-    let stats = [
-        { name: "Undefined", win: 3, loss: 100 },
-        { name: "Undefined", win: 2, loss: 100 },
-        { name: "Undefined", win: 1, loss: 100 },
-    ]; //api.getStats(); I assume this will be sorted by win/loss ratio? Needs to be a state.
+    onMount(() => {
+        /* Fetch players */
+        const Players_INIT: RequestInit = {
+            method: "GET",
+        };
+        fetch(`${PUBLIC_API_URL}/player`, Players_INIT).then((response) => {
+            if (response.status === 200)
+                response.json().then((data: Player[]) => {
+                    stats = data.sort((player1, player2) => {
+                        if (
+                            player1.eloMap["SMASH_ULTIMATE_SINGLES"] <
+                            player2.eloMap["SMASH_ULTIMATE_SINGLES"]
+                        ) {
+                            return 1;
+                        } else if (
+                            player1.eloMap["SMASH_ULTIMATE_SINGLES"] >
+                            player2.eloMap["SMASH_ULTIMATE_SINGLES"]
+                        ) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    });
+                });
+            else
+                console.log(
+                    "There was an error getting the players.",
+                    response,
+                );
+        });
+    });
 </script>
 
 <div id="landing">
@@ -51,16 +64,18 @@
         </p>
     </div>
     <div id="leaderBoard" class="contents">
-        <img src={lastGame.img} alt={lastGame.alt} />
+        <img src={smashImg} alt={"of the smash logo."} />
         <div class="leaderBoard">
             {#each [1, 0, 2] as top}
-                <div
-                    class="leader"
-                    style={`height: ${["75%", "50%", "25%"][top]};`}
-                >
-                    {top + 1}
-                    <p class="user">{stats[top].name}</p>
-                </div>
+                {#if top < stats.length}
+                    <div
+                        class="leader"
+                        style={`height: ${["75%", "50%", "25%"][top]};`}
+                    >
+                        {top + 1}
+                        <p class="user">{stats[top].name}</p>
+                    </div>
+                {/if}
             {/each}
         </div>
         <a href={`selectgame`}>New Tournament</a>

@@ -6,7 +6,6 @@ type Bracket = {
   gameType: string;
   rounds: number;
   winners: string[];
-  losers: string[];
   gameSets: GameSet[][];
   teams: PlayerSet[];
 };
@@ -16,7 +15,6 @@ type Game = {
   gameType: string;
   playerSets: PlayerSet[];
 };
-
 
 type GameSet = {
   id: string;
