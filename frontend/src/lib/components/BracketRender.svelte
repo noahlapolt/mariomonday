@@ -14,7 +14,7 @@
   } = $props();
 
   let reviveSet: GameSet | undefined = $state();
-  let newPlayerSet: PlayerSet | undefined = $state();
+  let addSet: GameSet | undefined = $state();
   let confirmation: (() => void) | undefined = $state();
 
   // Get some important round info.
@@ -35,7 +35,7 @@
   const playerSetHeight =
     gameInfo.playersOnATeam * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
   const gameSetsHeight =
-    (playerSetHeight + 10) *
+    (playerSetHeight + 12) *
       bracket.gameSets[0].length *
       gameInfo.maxPlayerSets +
     4;
@@ -149,14 +149,29 @@
   };
 
   const getLosersPlayerSets = (): PlayerSet[] => {
-    const losersPlayerSets: PlayerSet[] = [];
+    const loserPlayerSets: PlayerSet[] = [];
+    const loserIds = new Set<string>();
 
-    bracket.losers.forEach((loser) => {
-      const playerSet = playerSetMap.get(loser);
-      if (playerSet !== undefined) losersPlayerSets.push(playerSet);
+    bracket.gameSets.forEach((round) => {
+      round.forEach((gameSet) => {
+        if (gameSet.winners.length > 0) {
+          let winnerSet = new Set(gameSet.winners);
+          gameSet.playerSets.forEach((playerSetId) => {
+            let playerSet = playerSetMap.get(playerSetId);
+            if (
+              !winnerSet.has(playerSetId) &&
+              playerSet !== undefined &&
+              !loserIds.has(playerSetId)
+            ) {
+              loserIds.add(playerSetId);
+              loserPlayerSets.push(playerSet);
+            }
+          });
+        }
+      });
     });
 
-    return losersPlayerSets;
+    return loserPlayerSets;
   };
 </script>
 
@@ -165,9 +180,30 @@
     gameType={bracket.gameType}
     pool={getLosersPlayerSets()}
     onRevived={(revived) => {
-      if (reviveSet !== undefined) {
-        reviveSet.playerSets.push(revived);
-        reviveSet = undefined;
+      const playerSetRevived = playerSetMap.get(revived);
+      if (playerSetRevived !== undefined && reviveSet !== undefined) {
+        const bracket_INIT: RequestInit = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            gameSetId: reviveSet.id,
+            playerIds: playerSetRevived.players.map((player) => player.id),
+            teamName: playerSetRevived.name,
+          }),
+        };
+        fetch(
+          `${PUBLIC_API_URL}/bracket/${bracket.id}/addPlayer`,
+          bracket_INIT,
+        ).then((response) => {
+          if (response.status === 403) globalStates.login = true;
+          if (response.status === 200) {
+            response.json().then((data) => {
+              window.location.href = `/tournament.html?id=${data.id}`;
+            });
+          }
+        });
       }
     }}
     onCancel={() => {
@@ -176,12 +212,38 @@
   />
 {/if}
 
-{#if newPlayerSet !== undefined}
+{#if addSet !== undefined}
   <NewPlayerSet
-    {newPlayerSet}
-    onAddPlayerSet={() => {}}
+    teams={bracket.teams}
+    playerSetSize={gameInfo.playersOnATeam}
+    onAddPlayerSet={({ teamName, playerIds }) => {
+      if (addSet !== undefined) {
+        const bracket_INIT: RequestInit = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            gameSetId: addSet.id,
+            playerIds: playerIds,
+            teamName: teamName,
+          }),
+        };
+        fetch(
+          `${PUBLIC_API_URL}/bracket/${bracket.id}/addPlayer`,
+          bracket_INIT,
+        ).then((response) => {
+          if (response.status === 403) globalStates.login = true;
+          if (response.status === 200) {
+            response.json().then((data) => {
+              window.location.href = `/tournament.html?id=${data.id}`;
+            });
+          }
+        });
+      }
+    }}
     onCancel={() => {
-      newPlayerSet = undefined;
+      addSet = undefined;
     }}
   />
 {/if}
@@ -249,8 +311,8 @@
                 onRevive={(gameSet) => {
                   reviveSet = gameSet;
                 }}
-                onAddPlayerSet={(playerSet) => {
-                  newPlayerSet = playerSet;
+                onAddPlayerSet={(gameSet) => {
+                  addSet = gameSet;
                 }}
               />
               <!-- Display resolve option -->
