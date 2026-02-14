@@ -2,15 +2,27 @@ name: mariomonday
 
 services:
   db:
+    container_name: database_server
     image: mongodb/mongodb-community-server:latest
     restart: unless-stopped
+    network:
+      backend:
     ports:
       - "27017:27017"
   app:
+    container_name: backend_server
     depends_on:
       - db
     build:
-      context: backendserver/
+      context: .
       dockerfile: containerfile
+    network:
+      backend:
     ports:
       - "8080:8080"
+
+networks:
+  backend:
+    driver: bridge
+    config:
+      - subnet: "192.168.4.24/24"
