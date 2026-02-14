@@ -1,0 +1,16 @@
+name: mariomonday
+
+services:
+  db:
+    image: mongodb/mongodb-community-server:latest
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+  app:
+    depends_on:
+      - db
+    build:
+      context: backendserver/
+      dockerfile: containerfile
+    ports:
+      - "8080:8080"
