@@ -90,11 +90,11 @@
 
     // Adds the winners.
     const winners: string[] = [];
-    for (
-      let i = 0;
-      i < sortedWins.length && i < gameInfo.playerSetsToMoveOn;
-      i++
-    ) {
+    let winnerCount =
+      roundIndex === bracket.gameSets.length - 1
+        ? 1
+        : gameInfo.playerSetsToMoveOn;
+    for (let i = 0; i < sortedWins.length && i < winnerCount; i++) {
       winners.push(sortedWins[i][1].playerSetId);
     }
 
