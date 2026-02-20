@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     networks:
       - network
+    volumes:
+      - db:/data/db
+      - configdb:/data/configdb
   app:
     container_name: backend_server
     depends_on:
@@ -21,3 +24,7 @@ services:
 
 networks:
   network:
+
+volumes:
+  db:
+  configdb:
