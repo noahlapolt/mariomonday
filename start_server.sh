@@ -7,4 +7,4 @@ pnpm install
 pnpm build
 cd ..
 cd backendserver
-DB_NAME=prod ./mvnw clean spring-boot:run
+DB_NAME=prod DB_HOST=database_server ./mvnw clean spring-boot:run
