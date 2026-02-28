@@ -7,7 +7,10 @@
 
   /* Manage player information. */
   /* I was going to treat the data as sets, but sets are not in JSON really. */
-  let players: Player[] = $state([]);
+  let players: Player[] = $state([
+    { id: "test1", name: "Test 1", eloMap: {} },
+    { id: "test2", name: "Test 2", eloMap: {} },
+  ]);
   let playingTeams: PlayerSet[] = $state([]);
   let playerOptions: Player[] = $state([]);
   let selectedTeam: PlayerSet | undefined = $state();
@@ -196,8 +199,7 @@
       {/each}
     </Search>
     <div id="playing">
-      <!--This is hella slow should be optimized. Sveltes weird array does not let reverse work-->
-      {#each Array.from(playingTeams).reverse() as playerSet, index}
+      {#each playingTeams as playerSet, index}
         <PlayerSetRender
           {playerSet}
           {gameType}
