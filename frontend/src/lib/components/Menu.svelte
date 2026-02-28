@@ -1,7 +1,32 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { globalStates } from "./Utils.svelte";
+  import { PUBLIC_API_URL } from "$env/static/public";
 
   let drop = $state(false);
+  let currentBracket = $state("");
+
+  onMount(() => {
+    const login_INIT: RequestInit = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+    fetch(`${PUBLIC_API_URL}/getCurrentBracket`, login_INIT).then(
+      (response) => {
+        if (response.status === 200) {
+          response.json().then((data: Bracket) => {
+            currentBracket = data.id;
+          });
+        } else
+          console.log(
+            "There was an error getting the current bracket",
+            response,
+          );
+      },
+    );
+  });
 </script>
 
 <div class="menu">
@@ -42,7 +67,7 @@
           />
         </svg>
       </a>
-      <a href="/tournament">
+      <a href={`/tournament?id=${currentBracket}`}>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
           <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
           <path

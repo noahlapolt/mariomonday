@@ -196,8 +196,7 @@
       {/each}
     </Search>
     <div id="playing">
-      <!--This is hella slow should be optimized. Sveltes weird array does not let reverse work-->
-      {#each Array.from(playingTeams).reverse() as playerSet, index}
+      {#each playingTeams as playerSet, index}
         <PlayerSetRender
           {playerSet}
           {gameType}
