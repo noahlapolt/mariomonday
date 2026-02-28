@@ -1,2 +1,2 @@
 npx prettier --write "src/**/*.java"
-DB_NAME=test ./mvnw test
+SPRING_PROFILES_ACTIVE=test ./mvnw test

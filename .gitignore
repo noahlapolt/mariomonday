@@ -1,2 +1,5 @@
 **/.idea/*
 .build/*.jar
+**/*.crt
+**/*.key
+**/*.p12
