@@ -7,10 +7,7 @@
 
   /* Manage player information. */
   /* I was going to treat the data as sets, but sets are not in JSON really. */
-  let players: Player[] = $state([
-    { id: "test1", name: "Test 1", eloMap: {} },
-    { id: "test2", name: "Test 2", eloMap: {} },
-  ]);
+  let players: Player[] = $state([]);
   let playingTeams: PlayerSet[] = $state([]);
   let playerOptions: Player[] = $state([]);
   let selectedTeam: PlayerSet | undefined = $state();

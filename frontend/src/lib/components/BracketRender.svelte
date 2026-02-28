@@ -1,441 +1,208 @@
 <script lang="ts">
-  import { PUBLIC_API_URL } from "$env/static/public";
-  import GameSetRender from "./GameSetRender.svelte";
-  import NewPlayerSet from "./NewPlayerSet.svelte";
-  import RandomSelect from "./RandomSelect.svelte";
-  import { GameTypes, globalStates } from "./Utils.svelte";
-  import { SvelteMap } from "svelte/reactivity";
-  import areYouSure from "$lib/assets/are you sure.gif";
+    import { SvelteMap } from "svelte/reactivity";
+    import { GameTypes } from "./Utils.svelte";
+    import PlayerSetRender from "./PlayerSetRender.svelte";
+    import snake from "$lib/assets/snake.png";
 
-  let {
-    bracket,
-  }: {
-    bracket: Bracket;
-  } = $props();
+    let {
+        bracket,
+    }: {
+        bracket: Bracket;
+    } = $props();
 
-  let reviveSet: GameSet | undefined = $state();
-  let addSet: GameSet | undefined = $state();
-  let confirmation: (() => void) | undefined = $state();
+    // Get some important round info.
+    let playerSetMap: SvelteMap<string, PlayerSet> = $derived.by(() => {
+        const map = new SvelteMap<string, PlayerSet>();
 
-  // Get some important round info.
-  let playerSetMap: SvelteMap<string, PlayerSet> = $derived.by(() => {
-    const map = new SvelteMap<string, PlayerSet>();
-
-    // Makes a map of the teams for quicker refrence.
-    // TODO: Ask for the backend to send it like this.
-    bracket.teams.forEach((team) => {
-      map.set(team.id, team);
-    });
-
-    return map;
-  });
-
-  const gameInfo = GameTypes[bracket.gameType];
-  const maxPrevGames = gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn;
-  const playerSetHeight =
-    gameInfo.playersOnATeam * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
-  const gameSetsHeight =
-    (playerSetHeight + 12) *
-      bracket.gameSets[0].length *
-      gameInfo.maxPlayerSets +
-    4;
-
-  const resolveGameSet = (
-    roundIndex: number,
-    gameSet: GameSet,
-    gameSetIndex: number,
-  ) => {
-    // Get all of the players.
-    let totalWinsPerSet = new Map<
-      string,
-      { wins: number; playerSetId: string }
-    >();
-    gameSet.playerSets.forEach((playerSetId) => {
-      let playerSet = playerSetMap.get(playerSetId);
-      if (playerSet !== undefined) {
-        totalWinsPerSet.set(playerSet.id, {
-          wins: 0,
-          playerSetId: playerSetId,
+        // Makes a map of the teams for quicker refrence.
+        // TODO: Ask for the backend to send it like this.
+        bracket.teams.forEach((team) => {
+            map.set(team.id, team);
         });
-      }
+
+        return map;
     });
 
-    // Count up the wins.
-    const games: string[][] = [];
-    gameSet.games.forEach((game) => {
-      game.playerSets.forEach((playerSet, index) => {
-        if (index < gameInfo.playerSetsToMoveOn) {
-          let winCount = totalWinsPerSet.get(playerSet.id);
-          if (winCount !== undefined) {
-            totalWinsPerSet.set(playerSet.id, {
-              wins: winCount.wins + 1,
-              playerSetId: winCount.playerSetId,
-            });
-          } else {
-            // This will should never run, but its here just in case.
-            totalWinsPerSet.set(playerSet.id, {
-              wins: 1,
-              playerSetId: playerSet.id,
-            });
-          }
-        }
-      });
-      games.push(game.playerSets.map((playerSet) => playerSet.id));
-    });
-
-    // Sort by most wins.
-    const sortedWins = Array.from(totalWinsPerSet).sort(
-      (a, b) => b[1].wins - a[1].wins,
-    );
-
-    // Adds the winners.
-    const winners: string[] = [];
-    let winnerCount =
-      roundIndex === bracket.gameSets.length - 1
-        ? 1
-        : gameInfo.playerSetsToMoveOn;
-    for (let i = 0; i < sortedWins.length && i < winnerCount; i++) {
-      winners.push(sortedWins[i][1].playerSetId);
-    }
-
-    // Let the server know about the win.
-    const gameSet_INIT: RequestInit = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        forfeit: false,
-        games: games,
-        winners: winners,
-      }),
-    };
-
-    confirmation = () => {
-      fetch(
-        `${PUBLIC_API_URL}/bracket/${bracket.id}/completeGameSet/${gameSet.id}`,
-        gameSet_INIT,
-      ).then((response) => {
-        if (response.status === 403) globalStates.login = true;
-        else if (response.status === 200) {
-          // Update current game sets.
-          gameSet.winners = winners;
-
-          // Update any future options
-          if (roundIndex + 1 < bracket.gameSets.length) {
-            const nextRound = bracket.gameSets[roundIndex + 1];
-            const nextSetIndex = Math.floor(
-              gameSetIndex /
-                (gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn),
-            );
-            if (nextSetIndex < nextRound.length) {
-              winners.forEach((winner) => {
-                nextRound[nextSetIndex].playerSets.push(winner);
-              });
-            }
-            confirmation = undefined;
-          } else {
-            fetch(`${PUBLIC_API_URL}/bracket/${bracket.id}/complete`, {
-              method: "POST",
-            }).then((response) => {
-              if (response.status === 403) globalStates.login = true;
-              else if (response.status === 200) confirmation = undefined;
-              else response.text().then((error) => console.log(error));
-            });
-          }
-        } else response.text().then((error) => console.log(error));
-      });
-    };
-  };
-
-  const getLosersPlayerSets = (): PlayerSet[] => {
-    const loserPlayerSets: PlayerSet[] = [];
-    const loserIds = new Set<string>();
-
-    bracket.gameSets.forEach((round) => {
-      round.forEach((gameSet) => {
-        if (gameSet.winners.length > 0) {
-          let winnerSet = new Set(gameSet.winners);
-          gameSet.playerSets.forEach((playerSetId) => {
-            let playerSet = playerSetMap.get(playerSetId);
-            if (
-              !winnerSet.has(playerSetId) &&
-              playerSet !== undefined &&
-              !loserIds.has(playerSetId)
-            ) {
-              loserIds.add(playerSetId);
-              loserPlayerSets.push(playerSet);
-            }
-          });
-        }
-      });
-    });
-
-    return loserPlayerSets;
-  };
+    const gameInfo = GameTypes[bracket.gameType];
+    const maxPrevGames = gameInfo.maxPlayerSets / gameInfo.playerSetsToMoveOn;
+    const playerSetHeight =
+        gameInfo.playersOnATeam * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
+    const gameSetsHeight =
+        (playerSetHeight + 12) *
+            bracket.gameSets[0].length *
+            gameInfo.maxPlayerSets +
+        4;
+    const MEDALS = ["#FFD700", "#C0C0C0", "#CD7F32", "#000000"];
 </script>
 
-{#if reviveSet !== undefined}
-  <RandomSelect
-    gameType={bracket.gameType}
-    pool={getLosersPlayerSets()}
-    onRevived={(revived) => {
-      const playerSetRevived = playerSetMap.get(revived);
-      if (playerSetRevived !== undefined && reviveSet !== undefined) {
-        const bracket_INIT: RequestInit = {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            gameSetId: reviveSet.id,
-            playerIds: playerSetRevived.players.map((player) => player.id),
-            teamName: playerSetRevived.name,
-          }),
-        };
-        fetch(
-          `${PUBLIC_API_URL}/bracket/${bracket.id}/addPlayer`,
-          bracket_INIT,
-        ).then((response) => {
-          if (response.status === 403) globalStates.login = true;
-          if (response.status === 200) {
-            response.json().then((data) => {
-              window.location.href = `/tournament.html?id=${data.id}`;
-            });
-          }
-        });
-      }
-    }}
-    onCancel={() => {
-      reviveSet = undefined;
-    }}
-  />
-{/if}
-
-{#if addSet !== undefined}
-  <NewPlayerSet
-    teams={bracket.teams}
-    playerSetSize={gameInfo.playersOnATeam}
-    onAddPlayerSet={({ teamName, playerIds }) => {
-      if (addSet !== undefined) {
-        const bracket_INIT: RequestInit = {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            gameSetId: addSet.id,
-            playerIds: playerIds,
-            teamName: teamName,
-          }),
-        };
-        fetch(
-          `${PUBLIC_API_URL}/bracket/${bracket.id}/addPlayer`,
-          bracket_INIT,
-        ).then((response) => {
-          if (response.status === 403) globalStates.login = true;
-          if (response.status === 200) {
-            response.json().then((data) => {
-              window.location.href = `/tournament.html?id=${data.id}`;
-            });
-          }
-        });
-      }
-    }}
-    onCancel={() => {
-      addSet = undefined;
-    }}
-  />
-{/if}
-
-{#if confirmation !== undefined}
-  <div class="confirmPop">
-    <div class="confirm">
-      <img src={areYouSure} alt="Are you sure?" />
-      <div class="confirmButtons">
-        <button
-          onclick={() => {
-            confirmation = undefined;
-          }}
-          aria-label="Confirm"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
-            <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
-            <path
-              d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"
-            />
-          </svg>
-        </button>
-        <button onclick={confirmation} aria-label="Confirm">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
-            <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
-            <path
-              d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
-
 <div class="bracket">
-  <h1>
-    {bracket.gameType
-      .toLowerCase()
-      .split("_")
-      .reduce((prev, curr) => {
-        const capPrev = `${prev.charAt(0).toUpperCase()}${prev.substring(1, prev.length)}`;
-        const capCurr = `${curr.charAt(0).toUpperCase()}${curr.substring(1, curr.length)}`;
-        return `${capPrev} ${capCurr}`;
-      })}
-  </h1>
-  <b>{new Date(bracket.date).toDateString()}</b>
-  <div class="rounds">
-    {#each bracket.gameSets as gameSets, roundIndex}
-      <div class="round">
-        <h2>Round {roundIndex + 1}</h2>
-        <div class="gameSets" style={`height: ${gameSetsHeight}px`}>
-          {#each gameSets as gameSet, gameSetIndex}
-            <div class="gameSetWrapper">
-              {#if roundIndex !== 0}
-                <div class="vertLine"></div>
-              {/if}
-              <!-- Display a GameSet or a Revive/Add -->
-              <GameSetRender
-                bracketId={bracket.id}
-                gameType={bracket.gameType}
-                {gameSet}
-                disabled={gameSet.winners.length > 0}
-                {playerSetMap}
-                onRevive={(gameSet) => {
-                  reviveSet = gameSet;
-                }}
-                onAddPlayerSet={(gameSet) => {
-                  addSet = gameSet;
-                }}
-              />
-              <!-- Display resolve option -->
-              <button
-                aria-label="Resolve set."
-                onclick={() => {
-                  resolveGameSet(roundIndex, gameSet, gameSetIndex);
-                }}
-                disabled={gameSet.winners.length > 0}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
-                  <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
-                  <path
-                    d="M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134z"
-                  />
-                </svg>
-              </button>
-              <!-- Display the correct line. -->
-              {#if roundIndex !== bracket.gameSets.length - 1}
-                <div class="vertLine"></div>
-                {#if gameSetIndex % maxPrevGames === 0}
-                  <div
-                    class="horLine"
-                    style="height: 50%; transform: translateY(50%)"
-                  ></div>
-                {:else if gameSetIndex % maxPrevGames === maxPrevGames - 1}
-                  <div
-                    class="horLine"
-                    style="height: 50%; transform: translateY(-50%)"
-                  ></div>
-                {:else}
-                  <div class="horLine" style="height: 100%;"></div>
-                {/if}
-              {/if}
+    <h1>
+        {bracket.gameType
+            .toLowerCase()
+            .split("_")
+            .reduce((prev, curr) => {
+                const capPrev = `${prev.charAt(0).toUpperCase()}${prev.substring(1, prev.length)}`;
+                const capCurr = `${curr.charAt(0).toUpperCase()}${curr.substring(1, curr.length)}`;
+                return `${capPrev} ${capCurr}`;
+            })}
+    </h1>
+    <b>{new Date(bracket.date).toDateString()}</b>
+    <div class="rounds">
+        {#each bracket.gameSets as gameSets, roundIndex}
+            <div class="round">
+                <h2>Round {roundIndex + 1}</h2>
+                <div class="gameSets" style={`height: ${gameSetsHeight}px`}>
+                    {#each gameSets as gameSet, gameSetIndex}
+                        <div class="gameSetWrapper">
+                            {#if roundIndex !== 0}
+                                <div class="vertLine"></div>
+                            {/if}
+                            <!-- Display a GameSet -->
+                            <div class="gameSet">
+                                {#each gameSet.playerSets as playerSetId}
+                                    <div class="playerSet">
+                                        <PlayerSetRender
+                                            playerSet={playerSetMap.get(
+                                                playerSetId,
+                                            )}
+                                            gameType={bracket.gameType}
+                                        />
+                                        <div>
+                                            {#each gameSet.games as game}
+                                                {#each game.playerSets as playerSet, index}
+                                                    {#if playerSet.id === playerSetId}
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 640 640"
+                                                        >
+                                                            <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                                            <path
+                                                                fill={MEDALS[
+                                                                    index
+                                                                ]}
+                                                                d="M64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"
+                                                            />
+                                                        </svg>
+                                                    {/if}
+                                                {/each}
+                                            {/each}
+                                            {#each gameSet.winners as winner}
+                                                {#if winner === playerSetId}
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 640 640"
+                                                    >
+                                                        <!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                                        <path
+                                                            d="M345 151.2C354.2 143.9 360 132.6 360 120C360 97.9 342.1 80 320 80C297.9 80 280 97.9 280 120C280 132.6 285.9 143.9 295 151.2L226.6 258.8C216.6 274.5 195.3 278.4 180.4 267.2L120.9 222.7C125.4 216.3 128 208.4 128 200C128 177.9 110.1 160 88 160C65.9 160 48 177.9 48 200C48 221.8 65.5 239.6 87.2 240L119.8 457.5C124.5 488.8 151.4 512 183.1 512L456.9 512C488.6 512 515.5 488.8 520.2 457.5L552.8 240C574.5 239.6 592 221.8 592 200C592 177.9 574.1 160 552 160C529.9 160 512 177.9 512 200C512 208.4 514.6 216.3 519.1 222.7L459.7 267.3C444.8 278.5 423.5 274.6 413.5 258.9L345 151.2z"
+                                                        />
+                                                    </svg>
+                                                {/if}
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/each}
+                                {#each { length: gameInfo.maxPlayerSets - gameSet.playerSets.length }}
+                                    <div
+                                        class="invis"
+                                        style={`height: ${playerSetHeight}px;`}
+                                    >
+                                        <img
+                                            src={snake}
+                                            alt="of and you can't even say, my name (Snake)"
+                                        />
+                                    </div>
+                                {/each}
+                            </div>
+                            <!-- Display the correct line. -->
+                            {#if roundIndex !== bracket.gameSets.length - 1}
+                                <div class="vertLine"></div>
+                                {#if gameSetIndex % maxPrevGames === 0}
+                                    <div
+                                        class="horLine"
+                                        style="height: 50%; transform: translateY(50%)"
+                                    ></div>
+                                {:else if gameSetIndex % maxPrevGames === maxPrevGames - 1}
+                                    <div
+                                        class="horLine"
+                                        style="height: 50%; transform: translateY(-50%)"
+                                    ></div>
+                                {:else}
+                                    <div
+                                        class="horLine"
+                                        style="height: 100%;"
+                                    ></div>
+                                {/if}
+                            {/if}
+                        </div>
+                    {/each}
+                </div>
             </div>
-          {/each}
-        </div>
-      </div>
-    {/each}
-  </div>
+        {/each}
+    </div>
 </div>
 
 <style>
-  .confirmPop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: #00000055;
-    z-index: 9;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-  }
+    .bracket {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: var(--prime);
+        color: var(--text-prime);
+    }
 
-  .confirm {
-    background-color: #ffffff;
-    padding: 1rem;
-    border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-  }
+    .rounds {
+        display: flex;
+        flex-wrap: nowrap;
+        max-width: 100vw;
+        overflow: auto;
+    }
 
-  .confirmButtons {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
-  }
+    .round {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 
-  .confirm img {
-    width: 20rem;
-  }
+    .gameSets {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
 
-  .bracket {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: var(--prime);
-    color: var(--text-prime);
-  }
+    .gameSetWrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-grow: 1;
+    }
 
-  .rounds {
-    display: flex;
-    flex-wrap: nowrap;
-    max-width: 100vw;
-    overflow: auto;
-  }
+    .horLine {
+        background-color: aliceblue;
+        width: 2px;
+    }
 
-  .round {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+    .vertLine {
+        background-color: aliceblue;
+        height: 2px;
+        width: 2rem;
+    }
 
-  .gameSets {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-  }
+    .gameSet {
+        width: 20rem;
+        border-top: white 1px solid;
+        border-bottom: white 1px solid;
+        background-color: var(--secondary);
+    }
 
-  .gameSetWrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-grow: 1;
-  }
+    .playerSet {
+        justify-content: space-between;
+        flex-grow: 1;
+    }
 
-  .horLine {
-    background-color: aliceblue;
-    width: 2px;
-  }
-
-  .vertLine {
-    background-color: aliceblue;
-    height: 2px;
-    width: 2rem;
-  }
+    .invis img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
 </style>
