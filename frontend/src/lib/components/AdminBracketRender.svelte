@@ -64,20 +64,12 @@
     const games: string[][] = [];
     gameSet.games.forEach((game) => {
       game.playerSets.forEach((playerSet, index) => {
-        if (index < gameInfo.playerSetsToMoveOn) {
-          let winCount = totalWinsPerSet.get(playerSet.id);
-          if (winCount !== undefined) {
-            totalWinsPerSet.set(playerSet.id, {
-              wins: winCount.wins + 1,
-              playerSetId: winCount.playerSetId,
-            });
-          } else {
-            // This will should never run, but its here just in case.
-            totalWinsPerSet.set(playerSet.id, {
-              wins: 1,
-              playerSetId: playerSet.id,
-            });
-          }
+        let winCount = totalWinsPerSet.get(playerSet.id);
+        if (winCount !== undefined) {
+          totalWinsPerSet.set(playerSet.id, {
+            wins: winCount.wins + gameInfo.maxPlayerSets - index,
+            playerSetId: winCount.playerSetId,
+          });
         }
       });
       games.push(game.playerSets.map((playerSet) => playerSet.id));
