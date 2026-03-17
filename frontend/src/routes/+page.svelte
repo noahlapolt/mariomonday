@@ -54,12 +54,12 @@
         </p>
         <h2>Where?</h2>
         <p>
-            Did you read the paragraph before? Its at The Avenue Bar and Grill
+            Did you read the paragraph before? It is at The Avenue Bar and Grill
             (1249 Commonwealth Ave, Allston, MA 02134)
         </p>
         <h2>When?</h2>
         <p>
-            Seriously, did you read the first paragraph? Its every Monday at
+            Seriously, did you read the first paragraph? It is every Monday at
             8:30pm
         </p>
     </div>

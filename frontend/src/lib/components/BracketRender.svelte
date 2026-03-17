@@ -2,7 +2,6 @@
     import { SvelteMap } from "svelte/reactivity";
     import { GameTypes } from "./Utils.svelte";
     import PlayerSetRender from "./PlayerSetRender.svelte";
-    import snake from "$lib/assets/snake.png";
 
     let {
         bracket,
@@ -28,16 +27,64 @@
     const playerSetHeight =
         gameInfo.playersOnATeam * 40 + (gameInfo.playersOnATeam > 1 ? 30 : 0);
     const gameSetsHeight =
-        (playerSetHeight + 12) *
+        (playerSetHeight + 52) *
             bracket.gameSets[0].length *
             gameInfo.maxPlayerSets +
         4;
     const MEDALS = ["#FFD700", "#C0C0C0", "#CD7F32", "#000000"];
+    const cleanBracket: Bracket = JSON.parse(JSON.stringify(bracket));
+    if (cleanBracket.gameSets.length > 1) {
+        // Looks for byes to clean up the way they look.
+        cleanBracket.gameSets[0].forEach((gameSet, gameSetIndex) => {
+            if (gameSet.playerSets.length <= gameInfo.playerSetsToMoveOn) {
+                // Moves on the players that can skip to the next round.
+                let next =
+                    cleanBracket.gameSets[1][Math.floor(gameSetIndex / 2)];
+                gameSet.playerSets.forEach((playerSetId) => {
+                    if (
+                        next.playerSets.find(
+                            (nextId) => nextId === playerSetId,
+                        ) === undefined
+                    )
+                        next.playerSets.push(playerSetId);
+                });
+                // Clears the gameSet from before.
+                cleanBracket.gameSets[0][gameSetIndex] = {
+                    id: "empty",
+                    playerSets: [],
+                    games: [],
+                    previousGameSets: [],
+                    winners: next.playerSets,
+                };
+            }
+        });
+    }
+
+    /**
+     * Gets the set letter for a given set.
+     * @param roundIndex The current round index.
+     * @param gameSetIndex The index of the current game set.
+     */
+    const getSetLetter = (roundIndex: number, gameSetIndex: number): string => {
+        let lastGameText = "";
+
+        // Gets the game letter.
+        let gameLetter = 0;
+        for (let i = 0; i < roundIndex; i += 1)
+            gameLetter += bracket.gameSets[i].length;
+        gameLetter += gameSetIndex;
+
+        // Adds extra letters if it is past Z
+        for (let i = 0; i < Math.floor(gameLetter / 26) + 1; i++)
+            lastGameText += String.fromCharCode((gameLetter % 26) + 65);
+
+        return lastGameText;
+    };
 </script>
 
 <div class="bracket">
     <h1>
-        {bracket.gameType
+        {cleanBracket.gameType
             .toLowerCase()
             .split("_")
             .reduce((prev, curr) => {
@@ -46,26 +93,34 @@
                 return `${capPrev} ${capCurr}`;
             })}
     </h1>
-    <b>{new Date(bracket.date).toDateString()}</b>
+    <b>{new Date(cleanBracket.date).toDateString()}</b>
     <div class="rounds">
-        {#each bracket.gameSets as gameSets, roundIndex}
+        {#each cleanBracket.gameSets as gameSets, roundIndex}
             <div class="round">
                 <h2>Round {roundIndex + 1}</h2>
                 <div class="gameSets" style={`height: ${gameSetsHeight}px`}>
                     {#each gameSets as gameSet, gameSetIndex}
-                        <div class="gameSetWrapper">
-                            {#if roundIndex !== 0}
+                        <div
+                            class="gameSetWrapper"
+                            style={`opacity: ${gameSet.playerSets.length === 0 && roundIndex === 0 ? 0 : 1};`}
+                        >
+                            {#if gameSet.previousGameSets.length !== 0}
                                 <div class="vertLine"></div>
+                            {:else}
+                                <div class="vertLine" style="opacity: 0;"></div>
                             {/if}
                             <!-- Display a GameSet -->
                             <div class="gameSet">
+                                <div class="setHeader">
+                                    Set {getSetLetter(roundIndex, gameSetIndex)}
+                                </div>
                                 {#each gameSet.playerSets as playerSetId}
                                     <div class="playerSet">
                                         <PlayerSetRender
                                             playerSet={playerSetMap.get(
                                                 playerSetId,
                                             )}
-                                            gameType={bracket.gameType}
+                                            gameType={cleanBracket.gameType}
                                         />
                                         <div>
                                             {#each gameSet.games as game}
@@ -102,35 +157,54 @@
                                         </div>
                                     </div>
                                 {/each}
-                                {#each { length: gameInfo.maxPlayerSets - gameSet.playerSets.length }}
-                                    <div
-                                        class="invis"
-                                        style={`height: ${playerSetHeight}px;`}
-                                    >
-                                        <img
-                                            src={snake}
-                                            alt="of and you can't even say, my name (Snake)"
-                                        />
-                                    </div>
+                                <!--Labels the player as winner from a previous set-->
+                                {#each { length: gameSet.previousGameSets.length }, previousGameSetIndex}
+                                    {#if cleanBracket.gameSets[roundIndex - 1][gameSetIndex * 2 + previousGameSetIndex].winners.length === 0}
+                                        <div
+                                            class="playerSet"
+                                            style={`height: ${playerSetHeight}px;`}
+                                        >
+                                            <div style="padding: 0 0.5rem;">
+                                                Winner of Set {getSetLetter(
+                                                    roundIndex - 1,
+                                                    gameSetIndex * 2 +
+                                                        previousGameSetIndex,
+                                                )}
+                                            </div>
+                                        </div>
+                                    {/if}
                                 {/each}
+                                <!--This keeps the first rounds spacing correct-->
+                                {#if roundIndex === 0}
+                                    {#each { length: gameInfo.maxPlayerSets - gameSet.playerSets.length }}
+                                        <div
+                                            class="playerSet"
+                                            style={`height: ${playerSetHeight}px;`}
+                                        >
+                                            <div
+                                                style="padding: 0 0.5rem;"
+                                            ></div>
+                                        </div>
+                                    {/each}
+                                {/if}
                             </div>
                             <!-- Display the correct line. -->
-                            {#if roundIndex !== bracket.gameSets.length - 1}
+                            {#if roundIndex !== cleanBracket.gameSets.length - 1}
                                 <div class="vertLine"></div>
                                 {#if gameSetIndex % maxPrevGames === 0}
                                     <div
                                         class="horLine"
-                                        style="height: 50%; transform: translateY(50%)"
+                                        style="height: 50%; transform: translateY(calc(50% + 20px))"
                                     ></div>
                                 {:else if gameSetIndex % maxPrevGames === maxPrevGames - 1}
                                     <div
                                         class="horLine"
-                                        style="height: 50%; transform: translateY(-50%)"
+                                        style="height: 50%; transform: translateY(calc(-50% + 20px))"
                                     ></div>
                                 {:else}
                                     <div
                                         class="horLine"
-                                        style="height: 100%;"
+                                        style="height: 100%; transform: translateY(20px)"
                                     ></div>
                                 {/if}
                             {/if}
@@ -184,6 +258,7 @@
 
     .vertLine {
         background-color: aliceblue;
+        transform: translateY(20px);
         height: 2px;
         width: 2rem;
     }
@@ -192,17 +267,26 @@
         width: 20rem;
         border-top: white 1px solid;
         border-bottom: white 1px solid;
-        background-color: var(--secondary);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .setHeader {
+        display: flex;
+        justify-content: center;
+        height: 40px;
+        align-items: center;
+        font-size: 1.25rem;
     }
 
     .playerSet {
+        display: flex;
         justify-content: space-between;
+        align-items: center;
         flex-grow: 1;
-    }
-
-    .invis img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
+        background-color: var(--second);
+        margin: 5px;
+        padding: 0 0.5rem;
+        border-radius: 0.5rem;
     }
 </style>
