@@ -18,6 +18,7 @@ import mariomonday.backend.apis.schema.ApiBracket;
 import mariomonday.backend.apis.schema.ApiGameSet;
 import mariomonday.backend.apis.schema.CompleteGameSetRequest;
 import mariomonday.backend.apis.schema.CreateBracketRequest;
+import mariomonday.backend.apis.schema.SwapTeamsRequest;
 import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.GameSet;
 import mariomonday.backend.database.schema.GameType;
@@ -1654,6 +1655,166 @@ public class BracketControllerTest extends BaseSpringTest {
 
     // Act
     Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.addPlayer(bracket.getId(), request));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldSwapTwoPlayers_whenHappyPath() {
+    // Setup
+    var bracket = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    var request = SwapTeamsRequest.builder().bracketId(bracket.getId()).firstTeamId("0").secondTeamId("1").build();
+
+    // Act
+    var result = bracketController.swapPlayers(request);
+
+    // Verify
+    // First game should no longer have 0, should have 1
+    var game1 = result.getGameSets().get(0).get(0);
+    // Sanity check we are comparing the right game
+    Assertions.assertEquals("0v15", game1.getId());
+    Assertions.assertTrue(game1.getPlayerSets().contains("1"));
+    Assertions.assertFalse(game1.getPlayerSets().contains("0"));
+
+    // Second game should no longer have 1, should have 0
+    var game2 = result.getGameSets().get(0).get(4);
+    Assertions.assertEquals("1v14", game2.getId());
+    Assertions.assertTrue(game2.getPlayerSets().contains("0"));
+    Assertions.assertFalse(game2.getPlayerSets().contains("1"));
+
+    // Check change is made in DB as well
+    var gameOneAddedPlayers = gameSetRepository
+      .findById(game1.getId())
+      .get()
+      .getAddedPlayerSets()
+      .stream()
+      .map(PlayerSet::getId)
+      .collect(Collectors.toSet());
+    Assertions.assertTrue(gameOneAddedPlayers.contains("1"));
+    Assertions.assertFalse(gameOneAddedPlayers.contains("0"));
+
+    var gameTwoAddedPlayers = gameSetRepository
+      .findById(game2.getId())
+      .get()
+      .getAddedPlayerSets()
+      .stream()
+      .map(PlayerSet::getId)
+      .collect(Collectors.toSet());
+    Assertions.assertTrue(gameTwoAddedPlayers.contains("0"));
+    Assertions.assertFalse(gameTwoAddedPlayers.contains("1"));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldSwapTwoPlayers_whenSwappingWithBye() {
+    // Setup
+    var bracket = createPredictableBracket(15, GameType.SMASH_ULTIMATE_SINGLES);
+    var request = SwapTeamsRequest.builder().bracketId(bracket.getId()).firstTeamId("0").secondTeamId("1").build();
+
+    // Act
+    var result = bracketController.swapPlayers(request);
+
+    // Verify
+    // First game should no longer have 0, should have 1
+    var game1 = result.getGameSets().get(0).get(0);
+    // Sanity check we are comparing the right game
+    // (should be a bye round with just player 0 before the swap)
+    Assertions.assertEquals("0", game1.getId());
+    Assertions.assertTrue(game1.getPlayerSets().contains("1"));
+    Assertions.assertFalse(game1.getPlayerSets().contains("0"));
+
+    // Second game should no longer have 1, should have 0
+    var game2 = result.getGameSets().get(0).get(4);
+    Assertions.assertEquals("1v14", game2.getId());
+    Assertions.assertTrue(game2.getPlayerSets().contains("0"));
+    Assertions.assertFalse(game2.getPlayerSets().contains("1"));
+
+    // Check change is made in DB as well
+    var gameOneAddedPlayers = gameSetRepository
+      .findById(game1.getId())
+      .get()
+      .getAddedPlayerSets()
+      .stream()
+      .map(PlayerSet::getId)
+      .collect(Collectors.toSet());
+    Assertions.assertTrue(gameOneAddedPlayers.contains("1"));
+    Assertions.assertFalse(gameOneAddedPlayers.contains("0"));
+
+    var gameTwoAddedPlayers = gameSetRepository
+      .findById(game2.getId())
+      .get()
+      .getAddedPlayerSets()
+      .stream()
+      .map(PlayerSet::getId)
+      .collect(Collectors.toSet());
+    Assertions.assertTrue(gameTwoAddedPlayers.contains("0"));
+    Assertions.assertFalse(gameTwoAddedPlayers.contains("1"));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldThrow_whenNullBracket() {
+    // Setup
+    var request = SwapTeamsRequest.builder().firstTeamId("0").secondTeamId("1").build();
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.swapPlayers(request));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldThrow_whenFirstPlayerNull() {
+    // Setup
+    var bracket = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    var request = SwapTeamsRequest.builder().bracketId(bracket.getId()).secondTeamId("1").build();
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.swapPlayers(request));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldThrow_whenSecondPlayerNull() {
+    // Setup
+    var bracket = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    var request = SwapTeamsRequest.builder().bracketId(bracket.getId()).firstTeamId("0").build();
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.swapPlayers(request));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldThrow_whenBracketNotExist() {
+    // Setup
+    var request = SwapTeamsRequest.builder().bracketId("Fake bracket").firstTeamId("0").secondTeamId("1").build();
+
+    // Act & Verify
+    Assertions.assertThrows(NotFoundException.class, () -> bracketController.swapPlayers(request));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldThrow_whenFirstPlayerNotInBracket() {
+    // Setup
+    var bracket = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    var request = SwapTeamsRequest.builder().bracketId(bracket.getId()).firstTeamId("X").secondTeamId("1").build();
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.swapPlayers(request));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldThrow_whenSecondPlayerNotInBracket() {
+    // Setup
+    var bracket = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    var request = SwapTeamsRequest.builder().bracketId(bracket.getId()).firstTeamId("0").secondTeamId("X").build();
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.swapPlayers(request));
+  }
+
+  @Test
+  public void testSwapPlayers_shouldThrow_whenGameComplete() {
+    // Setup
+    var bracket = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    advancePredictableBracket(bracket.getId(), "0v15");
+    var request = SwapTeamsRequest.builder().bracketId(bracket.getId()).firstTeamId("0").secondTeamId("1").build();
+
+    // Act & Verify
+    Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.swapPlayers(request));
   }
 
   @Test

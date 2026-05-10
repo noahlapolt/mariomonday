@@ -13,6 +13,7 @@ import mariomonday.backend.apis.schema.AddPlayerSetToBracketRequest;
 import mariomonday.backend.apis.schema.ApiBracket;
 import mariomonday.backend.apis.schema.CompleteGameSetRequest;
 import mariomonday.backend.apis.schema.CreateBracketRequest;
+import mariomonday.backend.apis.schema.SwapTeamsRequest;
 import mariomonday.backend.database.schema.Bracket;
 import mariomonday.backend.database.schema.Game;
 import mariomonday.backend.database.schema.GameSet;
@@ -32,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -443,6 +445,85 @@ public class BracketController {
       bracket.getFinalGameSet().getWinners().stream().findFirst().get(),
       bracket.getTeams()
     );
+  }
+
+  @PostMapping("/swapPlayers")
+  @Transactional
+  public ApiBracket swapPlayers(@RequestBody SwapTeamsRequest request) {
+    if (request.getBracketId() == null || request.getFirstTeamId() == null || request.getSecondTeamId() == null) {
+      throw new InvalidRequestException("All fields must have values!");
+    }
+    var bracket = bracketRepo
+      .findById(request.getBracketId())
+      .orElseThrow(() -> new NotFoundException("Bracket not found"));
+    if (!bracket.getTeams().stream().map(PlayerSet::getId).toList().contains(request.getFirstTeamId())) {
+      throw new InvalidRequestException("Team " + request.getFirstTeamId() + " not in bracket!");
+    }
+    if (!bracket.getTeams().stream().map(PlayerSet::getId).toList().contains(request.getSecondTeamId())) {
+      throw new InvalidRequestException("Team " + request.getSecondTeamId() + " not in bracket!");
+    }
+
+    var gamesInBracket = gameSetRepo.findAllById(bracket.getGameSets().stream().map(GameSet::getId).toList());
+    var game1 = gamesInBracket
+      .stream()
+      .filter(gameSet ->
+        gameSet
+          .getAddedPlayerSets()
+          .stream()
+          .map(PlayerSet::getId)
+          .collect(Collectors.toSet())
+          .contains(request.getFirstTeamId())
+      )
+      .findFirst()
+      .get();
+    var game2 = gamesInBracket
+      .stream()
+      .filter(gameSet ->
+        gameSet
+          .getAddedPlayerSets()
+          .stream()
+          .map(PlayerSet::getId)
+          .collect(Collectors.toSet())
+          .contains(request.getSecondTeamId())
+      )
+      .findFirst()
+      .get();
+    if (!game1.getWinners().isEmpty()) {
+      throw new InvalidRequestException(
+        "Team " + request.getFirstTeamId() + " has already played!" + " Teams that have already played cannot be moved."
+      );
+    }
+    if (!game2.getWinners().isEmpty()) {
+      throw new InvalidRequestException(
+        "Team " +
+          request.getSecondTeamId() +
+          " has already played!" +
+          " Teams that have already played cannot be moved."
+      );
+    }
+    var teamIdToPlayerSet = bracket
+      .getTeams()
+      .stream()
+      .collect(Collectors.toMap(PlayerSet::getId, playerSet -> playerSet));
+    var newFirstGamePlayers = game1
+      .getAddedPlayerSets()
+      .stream()
+      .filter(ps -> !Objects.equals(ps.getId(), request.getFirstTeamId()))
+      .collect(Collectors.toSet());
+    newFirstGamePlayers.add(teamIdToPlayerSet.get(request.getSecondTeamId()));
+
+    var newSecondGamePlayers = game1
+      .getAddedPlayerSets()
+      .stream()
+      .filter(ps -> !Objects.equals(ps.getId(), request.getSecondTeamId()))
+      .collect(Collectors.toSet());
+    newSecondGamePlayers.add(teamIdToPlayerSet.get(request.getFirstTeamId()));
+
+    game1.setAddedPlayerSets(newFirstGamePlayers);
+    game2.setAddedPlayerSets(newSecondGamePlayers);
+    gameSetRepo.save(game1);
+    gameSetRepo.save(game2);
+    return ApiBracket.fromBracket(bracketRepo.findById(request.getBracketId()).get());
   }
 
   /**
