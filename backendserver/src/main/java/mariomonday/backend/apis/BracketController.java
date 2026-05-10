@@ -447,6 +447,12 @@ public class BracketController {
     );
   }
 
+  /**
+   * Swap two players/teams within a bracket.
+   * This can only be done before both teams have played a game.
+   * @param request Request object
+   * @return Updated bracket object with players swapped
+   */
   @PostMapping("/swapPlayers")
   @Transactional
   public ApiBracket swapPlayers(@RequestBody SwapTeamsRequest request) {

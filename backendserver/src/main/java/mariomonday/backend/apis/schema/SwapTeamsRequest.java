@@ -10,9 +10,18 @@ import lombok.Data;
 @Builder
 public class SwapTeamsRequest {
 
+  /**
+   * First team to swap
+   */
   private String firstTeamId;
 
+  /**
+   * Second team to swap
+   */
   private String secondTeamId;
 
+  /**
+   * Bracket they are swapping in
+   */
   private String bracketId;
 }
