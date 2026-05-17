@@ -36,6 +36,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -530,6 +531,30 @@ public class BracketController {
     gameSetRepo.save(game1);
     gameSetRepo.save(game2);
     return ApiBracket.fromBracket(bracketRepo.findById(request.getBracketId()).get());
+  }
+
+  /**
+   * Delete a bracket, and all associated games/game sets.
+   *
+   * NOTE: If the bracket was complete, the ELO change will not be undone.
+   * @param bracketId The bracket to delete
+   */
+  @DeleteMapping("/bracket/{bracketId}")
+  @Transactional
+  public void deleteBracket(@PathVariable String bracketId) {
+    var bracket = bracketRepo.findById(bracketId).orElseThrow(() -> new NotFoundException("Bracket not found"));
+
+    bracket
+      .getGameSets()
+      .stream()
+      .forEach(gameSet -> {
+        gameSet
+          .getGames()
+          .stream()
+          .forEach(game -> gameRepo.delete(game));
+        gameSetRepo.delete(gameSet);
+      });
+    bracketRepo.delete(bracket);
   }
 
   /**
