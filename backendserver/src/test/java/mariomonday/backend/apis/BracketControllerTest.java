@@ -2,6 +2,7 @@ package mariomonday.backend.apis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1804,6 +1805,66 @@ public class BracketControllerTest extends BaseSpringTest {
 
     // Act & Verify
     Assertions.assertThrows(InvalidRequestException.class, () -> bracketController.swapPlayers(request));
+  }
+
+  @Test
+  public void testDeleteBracket_shouldThrow_whenBracketNotExist() {
+    // Act & Verify
+    Assertions.assertThrows(NotFoundException.class, () -> bracketController.deleteBracket("fakeBracket"));
+  }
+
+  @Test
+  public void testDeleteBracket_shouldDeleteBracketAndGames_whenHappyPath() {
+    // Setup
+    var bracket1 = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    bracket1
+      .getGameSets()
+      .forEach(round -> round.forEach(gameSet -> advancePredictableBracket(bracket1.getId(), gameSet.getId())));
+
+    bracketController.completeBracket(bracket1.getId());
+    var bracket1Games = bracket1
+      .getGameSets()
+      .stream()
+      .flatMap(Collection::stream)
+      .flatMap(gameSet -> gameSet.getGames().stream())
+      .collect(Collectors.toSet());
+    var bracket2 = createPredictableBracket(16, GameType.SMASH_ULTIMATE_SINGLES);
+    bracket2
+      .getGameSets()
+      .forEach(round -> round.forEach(gameSet -> advancePredictableBracket(bracket2.getId(), gameSet.getId())));
+    bracketController.completeBracket(bracket2.getId());
+    var bracket2Games = bracket2
+      .getGameSets()
+      .stream()
+      .flatMap(Collection::stream)
+      .flatMap(gameSet -> gameSet.getGames().stream())
+      .collect(Collectors.toSet());
+
+    // Act
+    bracketController.deleteBracket(bracket1.getId());
+
+    // Verify
+    // Make sure bracket was deleted as expected and other bracket was not.
+    Assertions.assertTrue(bracket1Games.stream().allMatch(game -> gameRepository.findById(game.getId()).isEmpty()));
+    Assertions.assertTrue(bracket2Games.stream().noneMatch(game -> gameRepository.findById(game.getId()).isEmpty()));
+
+    Assertions.assertTrue(
+      bracket1
+        .getGameSets()
+        .stream()
+        .flatMap(Collection::stream)
+        .allMatch(gameSet -> gameSetRepository.findById(gameSet.getId()).isEmpty())
+    );
+    Assertions.assertTrue(
+      bracket2
+        .getGameSets()
+        .stream()
+        .flatMap(Collection::stream)
+        .allMatch(gameSet -> gameSetRepository.findById(gameSet.getId()).isEmpty())
+    );
+
+    Assertions.assertTrue(bracketRepository.findById(bracket1.getId()).isEmpty());
+    Assertions.assertTrue(bracketRepository.findById(bracket2.getId()).isPresent());
   }
 
   @Test
