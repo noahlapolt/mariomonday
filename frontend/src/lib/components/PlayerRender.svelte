@@ -49,9 +49,6 @@
     {:else}
       {player.name}
     {/if}
-    {#if gameType !== undefined}
-      Elo: {player.eloMap[gameType]}
-    {/if}
   </div>
 
   <div>
