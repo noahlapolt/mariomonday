@@ -6,7 +6,6 @@
   import { GameTypes, globalStates } from "./Utils.svelte";
   import { SvelteMap } from "svelte/reactivity";
   import areYouSure from "$lib/assets/are you sure.gif";
-  import PlayerSetRender from "./PlayerSetRender.svelte";
 
   let {
     bracket,
@@ -18,7 +17,7 @@
   let addSet: GameSet | undefined = $state();
   let swap: boolean = $state(false);
   let confirmation: (() => void) | undefined = $state();
-  let swaping: string[] = ["", ""];
+  let swaping: string[] = $state(["", ""]);
 
   // Get some important round info.
   let playerSetMap: SvelteMap<string, PlayerSet> = $derived.by(() => {
