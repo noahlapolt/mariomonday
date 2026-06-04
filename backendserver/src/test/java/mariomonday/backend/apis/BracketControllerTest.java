@@ -1720,12 +1720,16 @@ public class BracketControllerTest extends BaseSpringTest {
     Assertions.assertEquals("0", game1.getId());
     Assertions.assertTrue(game1.getPlayerSets().contains("1"));
     Assertions.assertFalse(game1.getPlayerSets().contains("0"));
+    // Should still be a bye round
+    Assertions.assertEquals(1, game1.getPlayerSets().size());
 
     // Second game should no longer have 1, should have 0
     var game2 = result.getGameSets().get(0).get(4);
     Assertions.assertEquals("1v14", game2.getId());
     Assertions.assertTrue(game2.getPlayerSets().contains("0"));
     Assertions.assertFalse(game2.getPlayerSets().contains("1"));
+    // Should still be a non-bye round
+    Assertions.assertEquals(2, game2.getPlayerSets().size());
 
     // Check change is made in DB as well
     var gameOneAddedPlayers = gameSetRepository
@@ -1737,6 +1741,8 @@ public class BracketControllerTest extends BaseSpringTest {
       .collect(Collectors.toSet());
     Assertions.assertTrue(gameOneAddedPlayers.contains("1"));
     Assertions.assertFalse(gameOneAddedPlayers.contains("0"));
+    // Should still be a bye round
+    Assertions.assertEquals(1, game1.getPlayerSets().size());
 
     var gameTwoAddedPlayers = gameSetRepository
       .findById(game2.getId())
@@ -1747,6 +1753,8 @@ public class BracketControllerTest extends BaseSpringTest {
       .collect(Collectors.toSet());
     Assertions.assertTrue(gameTwoAddedPlayers.contains("0"));
     Assertions.assertFalse(gameTwoAddedPlayers.contains("1"));
+    // Should still be a non-bye round
+    Assertions.assertEquals(2, game2.getPlayerSets().size());
   }
 
   @Test
