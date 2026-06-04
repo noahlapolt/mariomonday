@@ -508,26 +508,10 @@ public class BracketController {
           " Teams that have already played cannot be moved."
       );
     }
-    var teamIdToPlayerSet = bracket
-      .getTeams()
-      .stream()
-      .collect(Collectors.toMap(PlayerSet::getId, playerSet -> playerSet));
-    var newFirstGamePlayers = game1
-      .getAddedPlayerSets()
-      .stream()
-      .filter(ps -> !Objects.equals(ps.getId(), request.getFirstTeamId()))
-      .collect(Collectors.toSet());
-    newFirstGamePlayers.add(teamIdToPlayerSet.get(request.getSecondTeamId()));
 
-    var newSecondGamePlayers = game1
-      .getAddedPlayerSets()
-      .stream()
-      .filter(ps -> !Objects.equals(ps.getId(), request.getSecondTeamId()))
-      .collect(Collectors.toSet());
-    newSecondGamePlayers.add(teamIdToPlayerSet.get(request.getFirstTeamId()));
+    replacePlayerInGameSet(bracket, game1, request.getFirstTeamId(), request.getSecondTeamId());
+    replacePlayerInGameSet(bracket, game2, request.getSecondTeamId(), request.getFirstTeamId());
 
-    game1.setAddedPlayerSets(newFirstGamePlayers);
-    game2.setAddedPlayerSets(newSecondGamePlayers);
     gameSetRepo.save(game1);
     gameSetRepo.save(game2);
     return ApiBracket.fromBracket(bracketRepo.findById(request.getBracketId()).get());
@@ -574,5 +558,28 @@ public class BracketController {
     bracket.setWinners(winners.getPlayers());
     bracketRepo.save(bracket);
     playerSets.forEach(team -> playerRepo.saveAll(team.getPlayers()));
+  }
+
+  /**
+   * Replace teamIdToRemove with teamIdToAdd in the given game set.
+   * @param bracket Bracket game set is in
+   * @param set Game set to modify
+   * @param teamIdToRemove Team ID to remove from game set
+   * @param teamIdToAdd Team ID to add to game set
+   */
+  private void replacePlayerInGameSet(Bracket bracket, GameSet set, String teamIdToRemove, String teamIdToAdd) {
+    var teamIdToPlayerSet = bracket
+      .getTeams()
+      .stream()
+      .collect(Collectors.toMap(PlayerSet::getId, playerSet -> playerSet));
+
+    var newAddedPlayerSets = set
+      .getAddedPlayerSets()
+      .stream()
+      .filter(ps -> !Objects.equals(ps.getId(), teamIdToRemove))
+      .collect(Collectors.toSet());
+    newAddedPlayerSets.add(teamIdToPlayerSet.get(teamIdToAdd));
+
+    set.setAddedPlayerSets(newAddedPlayerSets);
   }
 }
